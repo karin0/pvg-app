@@ -30,6 +30,10 @@
   "eslintConfig": {
     "extends": "react-app"
   },
+  "prettier": {
+    "singleQuote": true,
+    "semi": false
+  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -41,5 +45,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "eslint": "^8.23.1",
+    "prettier": "^2.7.1"
   }
 }
