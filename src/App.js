@@ -1,4 +1,5 @@
 import React, { Component, useState } from 'react'
+import './index.css'
 
 import 'typeface-roboto'
 
@@ -228,7 +229,12 @@ const reg_bad = new RegExp(
 
 function get_tag_list(imgs) {
   const s = new Map()
+  let last_pid
   for (const img of imgs) {
+    const { pid } = img
+    if (pid === last_pid) continue
+    last_pid = pid
+
     for (const tag of img.tags) {
       const c = s.get(tag)
       s.set(tag, c ? c + 1 : 1)
@@ -237,9 +243,9 @@ function get_tag_list(imgs) {
     const c = s.get(tag)
     s.set(tag, c ? c + 1 : 1)
   }
-  return Array.from(s[Symbol.iterator]())
-    .sort((a, b) => compare_fallback(b[1], a[1], () => compare(a[0], b[0])))
-    .map((a) => a[0])
+  return Array.from(s[Symbol.iterator]()).sort((a, b) =>
+    compare_fallback(b[1], a[1], () => compare(a[0], b[0]))
+  )
 }
 
 class App extends Component {
@@ -498,8 +504,24 @@ class App extends Component {
                   <Autocomplete
                     multiple
                     freeSolo
+                    autoSelect
                     options={this.state.tags_list}
                     ListboxComponent={ListboxComponent}
+                    getOptionLabel={(o) => o[0]}
+                    renderOption={(props, tag) => {
+                      return (
+                        <li {...props}>
+                          {tag[0]}
+                          <Chip
+                            label={tag[1]}
+                            size="small"
+                            style={{
+                              marginLeft: '1em',
+                            }}
+                          />
+                        </li>
+                      )
+                    }}
                     renderTags={(value, getTagProps) =>
                       value.map((option, index) => (
                         <Chip
@@ -514,7 +536,12 @@ class App extends Component {
                     renderInput={(params) => (
                       <TextField fullWidth color="primary" {...params} />
                     )}
-                    onChange={(e, value) => this.set_tags(value)}
+                    onChange={(e, value) => {
+                      console.log('upd', value)
+                      this.set_tags(
+                        value.map((t) => (typeof t === 'string' ? t : t[0]))
+                      )
+                    }}
                     value={this.state.tags_curr}
                     classes={{
                       clearIndicator: classes.clear_indicator,

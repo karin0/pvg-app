@@ -1,14 +1,15 @@
 import React, { useContext, useState } from 'react'
 
 import {
+  AppBar,
   Box,
   Chip,
-  Drawer,
   Fab,
   Grid,
   Link,
   Pagination,
   TextField,
+  Toolbar,
   Typography,
   useMediaQuery,
 } from '@mui/material'
@@ -116,8 +117,9 @@ function ImageCaption(props) {
             const pos = tag_map.get(tag)
             return (
               <Chip
+                key={tag}
                 classes={{ root: classes.chip }}
-                color={isNaN(pos) ? 'default' : 'primary'}
+                color={isNaN(pos) ? 'info' : 'primary'}
                 label={tag}
                 onClick={() => {
                   props.close_modal()
@@ -148,7 +150,7 @@ function GalleryView(props) {
         {index >= 0 ? (
           <Modal onClose={close_modal}>
             <Carousel
-              currentIndex={index}
+              currentIndex={index >= 0 ? index : 0}
               views={props.views.map((img) => ({
                 source: host + img.ori,
                 caption: <ImageCaption img={img} close_modal={close_modal} />,
@@ -219,8 +221,6 @@ const useStylesGP = makeStyles((theme) => ({
 const lg_drawer_min_width = 700
 
 function GalleryPagination(props) {
-  const classes = useStylesGP()
-
   const [off, set_offset] = useState(props.default_offset)
 
   const tot = props.pages.length
@@ -232,39 +232,40 @@ function GalleryPagination(props) {
 
   const lg = useMediaQuery(`(min-width:${lg_drawer_min_width}px)`)
 
-  const pagination = (
-    <>
-      <Pagination
-        count={tot}
-        page={off + 1}
-        size="small"
-        onChange={(_, v) => {
-          window.scrollTo(0, 0)
-          set_offset(v - 1)
-        }}
-        color="primary"
-        siblingRange={lg ? 2 : 1}
-        boundaryRange={lg ? 3 : 1}
-      />
-      <PaginationInput switch={set_offset} tot={tot} />
-    </>
-  )
-
   return (
     <>
       <Box my={3} width="100%">
         <GalleryView images={images} views={views} />
       </Box>
-      <Drawer
-        variant="permanent"
-        anchor="bottom"
-        elevation={100}
-        classes={{ paper: classes.drawer }}
+      <AppBar
+        position="fixed"
+        sx={{ top: 'auto', bottom: 0 }}
+        className="page-bar"
+        color="info"
       >
-        <Grid container justifyContent="center">
-          {pagination}
-        </Grid>
-      </Drawer>
+        <Toolbar variant="dense">
+          <Grid
+            container
+            direction="row"
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Pagination
+              count={tot}
+              page={off + 1}
+              size="small"
+              onChange={(_, v) => {
+                window.scrollTo(0, 0)
+                set_offset(v - 1)
+              }}
+              color="primary"
+              siblingRange={lg ? 2 : 1}
+              boundaryRange={lg ? 3 : 1}
+            />
+            <PaginationInput switch={set_offset} tot={tot} />
+          </Grid>
+        </Toolbar>
+      </AppBar>
     </>
   )
 }
