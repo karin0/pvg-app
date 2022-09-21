@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import makeStyles from '@mui/styles/makeStyles';
 import {
   Box, Button, TextField, Dialog, DialogActions,
   DialogContent, DialogTitle,
   Grid, RadioGroup, Radio,
   FormControl, FormLabel, FormControlLabel, Typography
-} from '@material-ui/core';
+} from '@mui/material';
 import { host, upscale_target } from './env.js';
 
 const useStyles = makeStyles(theme => ({
@@ -158,7 +158,7 @@ export default function UpscalingDialog(props) {
             />
           </Box>
           <Box mt={1}>
-            <Grid container justify="space-between">
+            <Grid container justifyContent="space-between">
               <Grid item>
                 <TextField
                   margin="dense"

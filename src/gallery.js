@@ -1,10 +1,9 @@
 import React, { useState, useContext } from 'react';
 
-import { Fab, Link, Chip, Grid, Typography, Drawer, Box, TextField, useMediaQuery } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
-import SettingsOverscanIcon from '@material-ui/icons/SettingsOverscan';
+import { Fab, Link, Chip, Grid, Typography, Pagination, Drawer, Box, TextField, useMediaQuery } from '@mui/material';
+import makeStyles from '@mui/styles/makeStyles';
+import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan';
 
-import Pagination from "material-ui-flat-pagination";
 import Carousel, { Modal, ModalGateway } from 'react-images';
 import Gallery from 'react-photo-gallery';
 
@@ -233,42 +232,38 @@ function GalleryPagination(props) {
   const pagination = (
     <>
       <Pagination
-        limit={1}
-        offset={off}
-        total={tot}
-        onClick={(e, offset) => {
+        count={tot} page={off + 1}
+        size="small"
+        onChange={(_, v) => {
           window.scrollTo(0, 0);
-          set_offset(offset);
+          set_offset(v - 1);
         }}
-        otherPageColor="primary"
-        innerButtonCount={lg ? 2 : 1}
-        outerButtonCount={lg ? 3 : 1}
-        component="span"
+        color='primary'
+        siblingRange={lg ? 2 : 1}
+        boundaryRange={lg ? 3 : 1}
       />
       <PaginationInput switch={set_offset} tot={tot}/>
     </>
   );
 
-  return (
-    <>
-      <Box my={3} width="100%">
-        <GalleryView
-          images={images}
-          views={views}
-        />
-      </Box>
-      <Drawer
-        variant="permanent"
-        anchor="bottom"
-        elevation={100}
-        classes={{ paper: classes.drawer }}
-      >
-        <Grid container justify="center">
-          {pagination}
-        </Grid>
-      </Drawer>
-    </>
-  );
+  return <>
+    <Box my={3} width="100%">
+      <GalleryView
+        images={images}
+        views={views}
+      />
+    </Box>
+    <Drawer
+      variant="permanent"
+      anchor="bottom"
+      elevation={100}
+      classes={{ paper: classes.drawer }}
+    >
+      <Grid container justifyContent="center">
+        {pagination}
+      </Grid>
+    </Drawer>
+  </>;
 }
 
 function PvgGallery(props) {

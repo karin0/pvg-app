@@ -7,7 +7,6 @@ import {
   Box,
   CssBaseline,
   Toolbar,
-  Typography,
   Container,
   IconButton,
   TextField,
@@ -32,24 +31,25 @@ import {
   DialogContentText,
   DialogTitle,
   useScrollTrigger
-} from '@material-ui/core';
+} from '@mui/material';
 
-import { withStyles, ThemeProvider } from '@material-ui/core/styles';
-// import { darkWhite, lightWhite } from '@material-ui/core/colors';
+import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
+import withStyles from '@mui/styles/withStyles';
+// import { darkWhite, lightWhite } from '@mui/material/colors';
 
-import Autocomplete from '@material-ui/lab/Autocomplete';
+import Autocomplete from '@mui/material/Autocomplete';
 
-import MenuIcon from '@material-ui/icons/Menu';
-import UpdateIcon from '@material-ui/icons/Update';
-import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
-import EcoIcon from '@material-ui/icons/Eco';
-import DoneIcon from '@material-ui/icons/Done';
-import SyncIcon from '@material-ui/icons/Sync';
-import RefreshIcon from '@material-ui/icons/Refresh';
-import SecurityIcon from '@material-ui/icons/Security';
-import DateRangeIcon from '@material-ui/icons/DateRange';
-import SettingsIcon from '@material-ui/icons/Settings';
-import SettingsOverscanIcon from '@material-ui/icons/SettingsOverscan';
+import MenuIcon from '@mui/icons-material/Menu';
+import UpdateIcon from '@mui/icons-material/Update';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import EcoIcon from '@mui/icons-material/HealthAndSafety';
+import DoneIcon from '@mui/icons-material/Done';
+import SyncIcon from '@mui/icons-material/Sync';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import SecurityIcon from '@mui/icons-material/Security';
+import DateRangeIcon from '@mui/icons-material/DateRange';
+import SettingsIcon from '@mui/icons-material/Settings';
+import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan';
 
 import ListboxComponent from './Listbox.js'
 import { PvgGallery, TagUpdaterContext, FilterTagsContext } from './gallery.js'
@@ -310,23 +310,26 @@ class App extends Component {
       .then(res => res.json())
       .then(
         res => {
-          const resp = res.items.map(img => {
-            const [pid, ind, pre, w, h, title, author, aid, tags, fn] = img;
-            const nav = `/${pid}/${ind}`;
-            return {
-              pid,
-              ind,
-              title,
-              author,
-              aid,
-              tags,
-              w,
-              h,
-              fn,
-              iid: pid * 200 + ind,
-              ori: 'img' + nav,
-              thu: pre + nav
-            };
+          const resp = res.items.flatMap(illust => {
+            const [pid, title, aid, author, tags, pages] = illust;
+            return pages.map((page, ind) => {
+              const [w, h, pre, fn] = page;
+              const nav = `/${pid}/${ind}`;
+              return {
+                pid,
+                ind,
+                title,
+                author,
+                aid,
+                tags,
+                w,
+                h,
+                fn,
+                iid: pid * 200 + ind,
+                ori: 'img' + nav,
+                thu: pre + nav
+              };
+            }).filter(o => o.w && o.h);
           });
           const resp_safe = resp.filter(img => {
             for (const tag of img.tags)
@@ -464,210 +467,212 @@ class App extends Component {
     const { classes } = this.props;
 
     return (
-      <ThemeProvider theme={theme}>
-        <CssBaseline/>
-        <HideOnScroll>
-          <AppBar position="fixed">
-            <Toolbar variant="dense">
-              <IconButton
-                edge="start"
-                className={classes.menu_button}
-                color="inherit"
-                onClick={this.open_drawer}>
-                <MenuIcon/>
-              </IconButton>
-              <div className={classes.box}>
-                <Autocomplete
-                  multiple
-                  freeSolo
-                  options={this.state.tags_list}
-                  ListboxComponent={ListboxComponent}
-                  renderTags={
-                    (value, getTagProps) =>
-                      value.map((option, index) => (
-                        <Chip
-                          classes={{ root: classes.chip }}
-                          variant="outlined"
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={theme}>
+          <CssBaseline/>
+          <HideOnScroll>
+            <AppBar position="fixed">
+              <Toolbar variant="dense">
+                <IconButton
+                  edge="start"
+                  className={classes.menu_button}
+                  color="inherit"
+                  onClick={this.open_drawer}
+                  size="large">
+                  <MenuIcon/>
+                </IconButton>
+                <div className={classes.box}>
+                  <Autocomplete
+                    multiple
+                    freeSolo
+                    options={this.state.tags_list}
+                    ListboxComponent={ListboxComponent}
+                    renderTags={
+                      (value, getTagProps) =>
+                        value.map((option, index) => (
+                          <Chip
+                            classes={{ root: classes.chip }}
+                            variant="outlined"
+                            color="primary"
+                            label={option}
+                            {...getTagProps({ index })}
+                          />
+                        ))
+                    }
+                    renderInput={
+                      params => (
+                        <TextField
+                          fullWidth
                           color="primary"
-                          label={option}
-                          {...getTagProps({ index })}
+                          {...params}
                         />
-                      ))
-                  }
-                  renderInput={
-                    params => (
-                      <TextField
-                        fullWidth
-                        color="primary"
-                        {...params}
-                      />
-                    )
-                  }
-                  onChange={(e, value) => this.set_tags(value)}
-                  renderOption={option => <Typography noWrap>{option}</Typography>}
-                  value={this.state.tags_curr}
-                  classes={{
-                    clearIndicator: classes.clear_indicator,
-                    inputRoot: classes.input_root,
-                    input: classes.input
-                  }}
+                      )
+                    }
+                    onChange={(e, value) => this.set_tags(value)}
+                    value={this.state.tags_curr}
+                    classes={{
+                      clearIndicator: classes.clear_indicator,
+                      inputRoot: classes.input_root,
+                      input: classes.input
+                    }}
+                  />
+                </div>
+              </Toolbar>
+            </AppBar>
+          </HideOnScroll>
+          <Drawer
+            open={this.state.drawer_open}
+            onClose={this.close_drawer}
+            classes={{ paper: classes.drawer }}
+          >
+            <Card classes={{ root: classes.card }}>
+              <Box mt={3} ml={2} mb={-0.5}>
+                <Avatar
+                  src={host + 'avatar'}
+                  className={classes.avatar}
                 />
-              </div>
-            </Toolbar>
-          </AppBar>
-        </HideOnScroll>
-        <Drawer
-          open={this.state.drawer_open}
-          onClose={this.close_drawer}
-          classes={{ paper: classes.drawer }}
-        >
-          <Card classes={{ root: classes.card }}>
-            <Box mt={3} ml={2} mb={-0.5}>
-              <Avatar
-                src={host + 'avatar'}
-                className={classes.avatar}
-              />
-            </Box>
-            <CardHeader
-              title={
-                this.state.card_title_2 ?
-                  <>
-                    <Box
-                      fontWeight="fontWeightBold"
-                      display="inline"
-                    >
+              </Box>
+              <CardHeader
+                title={
+                  this.state.card_title_2 ?
+                    <>
+                      <Box
+                        fontWeight="fontWeightBold"
+                        display="inline"
+                      >
+                        {this.state.card_title}
+                      </Box>
+                      <Box
+                        ml={1}
+                        display="inline"
+                      >
+                        {this.state.card_title_2}
+                      </Box>
+                    </> :
+                    <Box fontWeight="fontWeightBold">
                       {this.state.card_title}
                     </Box>
-                    <Box
-                      ml={1}
-                      display="inline"
-                    >
-                      {this.state.card_title_2}
-                    </Box>
-                  </> :
-                  <Box fontWeight="fontWeightBold">
-                    {this.state.card_title}
-                  </Box>
-              }
-              subheader={this.state.card_subtitle}
-              classes={{
-                title: classes.card_text,
-                subheader: classes.card_text
-              }}
-            />
-          </Card>
-          <div
-            className={classes.list}
-            role="presentation">
-            <List className={classes.list}>
-              <UpscalingItem/>
+                }
+                subheader={this.state.card_subtitle}
+                classes={{
+                  title: classes.card_text,
+                  subheader: classes.card_text
+                }}
+              />
+            </Card>
+            <div
+              className={classes.list}
+              role="presentation">
+              <List className={classes.list}>
+                <UpscalingItem/>
+                <ListItem
+                  button
+                  key="refresh"
+                  onClick={this.refresh}
+                >
+                  <ListItemIcon>
+                    <RefreshIcon/>
+                  </ListItemIcon>
+                  <ListItemText primary="Refresh"/>
+                </ListItem>
+              </List>
+              <Divider/>
+              <List className={classes.list}>
+                {action_listitems.map(action_mapper(this.close_drawer))}
+              </List>
+              <Divider/>
+              <List className={classes.list}>
+                <ListItem>
+                  <ListItemIcon>
+                    <SecurityIcon/>
+                  </ListItemIcon> <ListItemText primary="Safe Mode"/>
+                  <ListItemSecondaryAction>
+                    <Switch
+                      edge="end"
+                      onChange={this.toggle_safe}
+                      checked={this.state.safe}
+                    />
+                  </ListItemSecondaryAction>
+                </ListItem>
+              </List>
               <ListItem
                 button
-                key="refresh"
-                onClick={this.refresh}
+                key="options"
+                onClick={this.open_settings}
               >
                 <ListItemIcon>
-                  <RefreshIcon/>
+                  <SettingsIcon/>
                 </ListItemIcon>
-                <ListItemText primary="Refresh"/>
+                <ListItemText primary="Options"/>
               </ListItem>
-            </List>
-            <Divider/>
-            <List className={classes.list}>
-              {action_listitems.map(action_mapper(this.close_drawer))}
-            </List>
-            <Divider/>
-            <List className={classes.list}>
-              <ListItem>
-                <ListItemIcon>
-                  <SecurityIcon/>
-                </ListItemIcon> <ListItemText primary="Safe Mode"/>
-                <ListItemSecondaryAction>
-                  <Switch
-                    edge="end"
-                    onChange={this.toggle_safe}
-                    checked={this.state.safe}
-                  />
-                </ListItemSecondaryAction>
-              </ListItem>
-            </List>
-            <ListItem
-              button
-              key="options"
-              onClick={this.open_settings}
-            >
-              <ListItemIcon>
-                <SettingsIcon/>
-              </ListItemIcon>
-              <ListItemText primary="Options"/>
-            </ListItem>
-            <Dialog
-              open={this.state.settings_open}
-              onClose={this.close_settings}
-              maxWidth="sm"
-              fullWidth={true}
-            >
-              <DialogTitle>Options</DialogTitle>
-              <DialogContent>
-                <List style={{ width: "100%" }}>
-                  <ListItem>
-                    <ListItemIcon>
-                      <DateRangeIcon/>
-                    </ListItemIcon>
-                    <ListItemText primary="Sort by Dates"/>
-                    <ListItemSecondaryAction>
-                      <Switch
-                        edge="end"
-                        onChange={this.toggle_resort}
-                        checked={this.state.resort}
-                      />
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                  <FullUpdateItem
-                    on_confirm={this.close_drawer}
-                  />
-                </List>
-              </DialogContent>
-            </Dialog>
-            <Divider/>
-            <List>
-              <ListItem key="info">
-                <ListItemText primary={
-                  <>
-                    <Link
-                      href="https://github.com/karin0/pvg"
-                      target="_blank"
-                      rel="noreferrer">
-                      pvg-ng
-                    </Link>
-                    <br/>
-                    {this.state.ver}
-                  </>
-                }
-                />
-              </ListItem>
-            </List>
-          </div>
-        </Drawer>
-        <Container
-          className={classes.main}
-          maxWidth="lg"
-        >
-          {this.state.loaded ?
-            (this.state.error ?
-                "Error" :
-                <TagUpdaterContext.Provider value={this.toggle_tag}>
-                  <FilterTagsContext.Provider value={this.state.tags_curr_map}>
-                    <PvgGallery
-                      images={this.state.images}
-                      locating_id={this.state.locating_id}
+              <Dialog
+                open={this.state.settings_open}
+                onClose={this.close_settings}
+                maxWidth="sm"
+                fullWidth={true}
+              >
+                <DialogTitle>Options</DialogTitle>
+                <DialogContent>
+                  <List style={{ width: "100%" }}>
+                    <ListItem>
+                      <ListItemIcon>
+                        <DateRangeIcon/>
+                      </ListItemIcon>
+                      <ListItemText primary="Sort by Dates"/>
+                      <ListItemSecondaryAction>
+                        <Switch
+                          edge="end"
+                          onChange={this.toggle_resort}
+                          checked={this.state.resort}
+                        />
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                    <FullUpdateItem
+                      on_confirm={this.close_drawer}
                     />
-                  </FilterTagsContext.Provider>
-                </TagUpdaterContext.Provider>
-            ) : "Loading.."
-          }
-        </Container>
-      </ThemeProvider>
+                  </List>
+                </DialogContent>
+              </Dialog>
+              <Divider/>
+              <List>
+                <ListItem key="info">
+                  <ListItemText primary={
+                    <>
+                      <Link
+                        href="https://github.com/karin0/pvg"
+                        target="_blank"
+                        rel="noreferrer">
+                        pvg-ng
+                      </Link>
+                      <br/>
+                      {this.state.ver}
+                    </>
+                  }
+                  />
+                </ListItem>
+              </List>
+            </div>
+          </Drawer>
+          <Container
+            className={classes.main}
+            maxWidth="lg"
+          >
+            {this.state.loaded ?
+              (this.state.error ?
+                  "Error" :
+                  <TagUpdaterContext.Provider value={this.toggle_tag}>
+                    <FilterTagsContext.Provider value={this.state.tags_curr_map}>
+                      <PvgGallery
+                        images={this.state.images}
+                        locating_id={this.state.locating_id}
+                      />
+                    </FilterTagsContext.Provider>
+                  </TagUpdaterContext.Provider>
+              ) : "Loading.."
+            }
+          </Container>
+        </ThemeProvider>
+      </StyledEngineProvider>
     );
   }
 }
