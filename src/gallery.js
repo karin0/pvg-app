@@ -1,10 +1,11 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 
 import {
   AppBar,
   Box,
   Chip,
   Fab,
+  Fade,
   Grid,
   Link,
   Pagination,
@@ -81,57 +82,71 @@ const useStylesIC = makeStyles((theme) => ({
 
 function ImageCaption(props) {
   const classes = useStylesIC()
+  const [show, set_show] = useState(true)
+
+  const img = props.img
+  useEffect(() => {
+    const a = document.querySelectorAll('img.react-images__view-image')
+    for (const e of a) {
+      if (e.src?.includes(img.ori)) {
+        const f = () => set_show(!show)
+        e.addEventListener('click', f)
+        return () => e.removeEventListener('click', f)
+      }
+    }
+  })
 
   const update_tags = useContext(TagUpdaterContext)
   const tag_map = useContext(FilterTagsContext)
 
-  const img = props.img
   const illust_url = 'https://www.pixiv.net/artworks/' + img.pid.toString(),
     author_url = 'https://www.pixiv.net/member.php?id=' + img.aid.toString()
 
   const apos = tag_map.get(img.author)
   return (
-    <>
-      <div className={classes.caption}>
-        <Grid container>
-          <Grid item>
-            <Box pr={1}>
-              <CaptionLink url={illust_url} text={img.title} />
-            </Box>
+    <Fade in={show}>
+      <div>
+        <div className={classes.caption}>
+          <Grid container>
+            <Grid item>
+              <Box pr={1}>
+                <CaptionLink url={illust_url} text={img.title} />
+              </Box>
+            </Grid>
+            <Grid item>
+              <CaptionLink url={author_url} text={img.author} />
+            </Grid>
           </Grid>
-          <Grid item>
-            <CaptionLink url={author_url} text={img.author} />
-          </Grid>
-        </Grid>
-        <Box mt={0.5} mb={-1}>
-          <Chip
-            classes={{ root: classes.chip }}
-            color={isNaN(apos) ? 'secondary' : 'primary'}
-            label={img.author}
-            onClick={() => {
-              props.close_modal()
-              update_tags(img.author, img.iid, apos)
-            }}
-          />
-          {img.tags.map((tag) => {
-            const pos = tag_map.get(tag)
-            return (
-              <Chip
-                key={tag}
-                classes={{ root: classes.chip }}
-                color={isNaN(pos) ? 'info' : 'primary'}
-                label={tag}
-                onClick={() => {
-                  props.close_modal()
-                  update_tags(tag, img.iid, pos)
-                }}
-              />
-            )
-          })}
-        </Box>
+          <Box mt={0.5} mb={-1}>
+            <Chip
+              classes={{ root: classes.chip }}
+              color={isNaN(apos) ? 'secondary' : 'primary'}
+              label={img.author}
+              onClick={() => {
+                props.close_modal()
+                update_tags(img.author, img.iid, apos)
+              }}
+            />
+            {img.tags.map((tag) => {
+              const pos = tag_map.get(tag)
+              return (
+                <Chip
+                  key={tag}
+                  classes={{ root: classes.chip }}
+                  color={isNaN(pos) ? 'info' : 'primary'}
+                  label={tag}
+                  onClick={() => {
+                    props.close_modal()
+                    update_tags(tag, img.iid, pos)
+                  }}
+                />
+              )
+            })}
+          </Box>
+        </div>
+        <UpscalingButton img={img} />
       </div>
-      <UpscalingButton img={img} />
-    </>
+    </Fade>
   )
 }
 

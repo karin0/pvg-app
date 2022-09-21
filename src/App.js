@@ -365,9 +365,15 @@ class App extends Component {
 
   set_tags = (tags) => {
     // console.log('sets', tags);
+    const s = new Set()
+    const tags_curr = tags.filter((tag) => {
+      if (s.has(tag)) return false
+      s.add(tag)
+      return true
+    })
     this.setState(
       {
-        tags_curr: tags,
+        tags_curr,
         locating_id: -1,
       },
       this.update
