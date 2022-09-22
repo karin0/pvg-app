@@ -1,7 +1,4 @@
 .react-images__view img {
     max-height: 100vh;
-}
-
-.page-bar {
-    background-color: rgba(238, 238, 238, 0.95) !important;
+    max-width: 100vw;
 }
