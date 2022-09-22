@@ -77,6 +77,7 @@ const useStylesIC = makeStyles((theme) => ({
     position: 'absolute',
     left: theme.spacing(2),
     bottom: theme.spacing(2),
+    marginBottom: -12,
   },
 }))
 
@@ -110,11 +111,19 @@ function ImageCaption(props) {
           <Grid container>
             <Grid item>
               <Box pr={1}>
-                <CaptionLink url={illust_url} text={img.title} />
+                <CaptionLink url={illust_url} text={img.title + ' - '} />
               </Box>
             </Grid>
             <Grid item>
               <CaptionLink url={author_url} text={img.author} />
+            </Grid>
+            <Grid item>
+              <Chip
+                label={img.san}
+                size="small"
+                color="error"
+                style={{ marginLeft: 10 }}
+              />
             </Grid>
           </Grid>
           <Box mt={0.5} mb={-1}>
@@ -143,6 +152,11 @@ function ImageCaption(props) {
               )
             })}
           </Box>
+          <Grid container style={{ marginTop: 8 }}>
+            <Grid item>
+              <Typography>{img.date}</Typography>
+            </Grid>
+          </Grid>
         </div>
         <UpscalingButton img={img} />
       </div>

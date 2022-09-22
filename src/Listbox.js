@@ -1,9 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import useMediaQuery from '@mui/material/useMediaQuery'
-import ListSubheader from '@mui/material/ListSubheader'
 import { VariableSizeList } from 'react-window'
-import theme from './theme.js'
 
 const LISTBOX_PADDING = 8 // px
 
@@ -30,17 +27,15 @@ const ListboxComponent = React.forwardRef(function ListboxComponent(
 ) {
   const { children, ...other } = props
   const itemData = React.Children.toArray(children)
-  const smUp = useMediaQuery(theme.breakpoints.up('sm'), { noSsr: true })
   const itemCount = itemData.length
-  const itemSize = smUp ? 36 : 48
+  const itemSize = 32
 
   const getChildSize = (child) => {
-    if (React.isValidElement(child) && child.type === ListSubheader) return 48
     return itemSize
   }
 
   const getHeight = () => {
-    if (itemCount > 8) return 8 * itemSize
+    if (itemCount > 20) return 20 * itemSize
     return itemData.map(getChildSize).reduce((a, b) => a + b, 0)
   }
 
@@ -55,7 +50,7 @@ const ListboxComponent = React.forwardRef(function ListboxComponent(
           outerElementType={OuterElementType}
           innerElementType="ul"
           itemSize={(index) => getChildSize(itemData[index])}
-          overscanCount={5}
+          overscanCount={20}
           itemCount={itemCount}
         >
           {renderRow}

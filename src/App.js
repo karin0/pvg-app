@@ -308,7 +308,8 @@ class App extends Component {
       .then(
         (res) => {
           const resp = res.items.flatMap((illust) => {
-            const [pid, title, aid, author, tags, pages] = illust
+            const [pid, title, aid, author, tags, pages, caption, date, san] =
+              illust
             return pages
               .map((page, ind) => {
                 const [w, h, pre, fn] = page
@@ -326,6 +327,9 @@ class App extends Component {
                   iid: pid * 200 + ind,
                   ori: 'img' + nav,
                   thu: pre + nav,
+                  caption,
+                  date,
+                  san,
                 }
               })
               .filter((o) => o.w && o.h)
@@ -511,12 +515,16 @@ class App extends Component {
                     multiple
                     freeSolo
                     autoSelect
+                    size="small"
+                    selectOnFocus
+                    clearOnBlur
+                    handleHomeEndKeys
                     options={this.state.tags_list}
                     ListboxComponent={ListboxComponent}
                     getOptionLabel={(o) => o[0]}
                     renderOption={(props, tag) => {
                       return (
-                        <li {...props}>
+                        <li {...props} style={{ height: 10 }}>
                           {tag[0]}
                           <Chip
                             label={tag[1]}

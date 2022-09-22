@@ -11,6 +11,9 @@ const theme = createTheme({
     info: {
       main: '#EEEEEE',
     },
+    error: {
+      main: 'rgb(255, 64, 96)',
+    },
   },
 })
 
