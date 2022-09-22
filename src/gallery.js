@@ -142,7 +142,7 @@ function ImageCaption(props) {
           </Box>
           <Grid container style={{ marginTop: 8 }}>
             <Grid item>
-              <Typography>{img.date}</Typography>
+              <Typography>{img.pid + ': ' + img.date}</Typography>
             </Grid>
           </Grid>
         </div>
