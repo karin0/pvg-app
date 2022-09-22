@@ -5,10 +5,12 @@ import {
   Chip,
   Fab,
   Fade,
+  FormControlLabel,
   Grid,
   ImageList,
   ImageListItem,
   Link,
+  Switch,
   Typography,
   useMediaQuery,
 } from '@mui/material'
@@ -151,13 +153,24 @@ function ImageCaption(props) {
               )
             })}
           </Box>
-          <Grid container style={{ marginTop: 8 }}>
+          <Grid container style={{ marginTop: 12 }}>
             <Grid item>
-              <Typography>{img.pid + ': ' + img.date}</Typography>
+              <Chip
+                classes={{ root: classes.chip }}
+                label={img.pid}
+                color="info"
+                size="small"
+              />
+              <Chip
+                classes={{ root: classes.chip }}
+                label={img.date}
+                color="info"
+                size="small"
+              />
             </Grid>
           </Grid>
         </div>
-        <UpscalingButton img={img} />
+        {/*<UpscalingButton img={img} />*/}
       </div>
     </Fade>
   )
@@ -213,29 +226,31 @@ function GalleryPagination(props) {
   console.log('loaded', off)
 
   return (
-    <Box my={3}>
-      <InfiniteScroll
-        dataLength={off}
-        next={() => {
-          set_views([
-            ...views,
-            <GalleryView key={off} images={props.pages[off]} />,
-          ])
-        }}
-        hasMore={has_more}
-        loader={
-          <div className="loader" key={-1}>
-            Loading ...
-          </div>
-        }
-      >
-        {views}
-      </InfiniteScroll>
-    </Box>
+    <InfiniteScroll
+      dataLength={off}
+      next={() => {
+        set_views([
+          ...views,
+          <GalleryView key={off} images={props.pages[off]} />,
+        ])
+      }}
+      hasMore={has_more}
+      loader={
+        <div className="loader" key={-1}>
+          Loading ...
+        </div>
+      }
+    >
+      {views}
+    </InfiniteScroll>
   )
 }
 
 function PvgGallery(props) {
+  const [reversed, set_reversed] = useState(false)
+  // FIXME: keep the order of pages in the same illust
+  const images = reversed ? props.images.slice().reverse() : props.images
+
   const pages = []
   let page = [],
     offset = 0,
@@ -245,7 +260,7 @@ function PvgGallery(props) {
 
   const s = new Set(),
     sa = new Set()
-  for (const img of props.images) {
+  for (const img of images) {
     s.add(img.pid)
     sa.add(img.aid)
 
@@ -267,15 +282,33 @@ function PvgGallery(props) {
   }
 
   return (
-    <>
-      <Box pt={8} mb={-2.5} pl={3.5}>
-        <Typography display="inline" color="textSecondary" variant="body2">
-          Found {props.images.length} images from {s.size} artworks by {sa.size}{' '}
-          users
-        </Typography>
-      </Box>
-      <GalleryPagination pages={pages} default_offset={offset} key={[ha, hs]} />
-    </>
+    <Box pt={8} mb={-2.5}>
+      <Grid container>
+        <Grid item style={{ width: '100%' }} px={2}>
+          <Typography display="inline" color="textSecondary" variant="body2">
+            {props.images.length} pages from {s.size} illusts by {sa.size} users
+          </Typography>
+          <FormControlLabel
+            style={{ float: 'right' }}
+            control={
+              <Switch
+                checked={reversed}
+                onChange={(e) => set_reversed(e.target.checked)}
+                size="small"
+              />
+            }
+            label="Reverse"
+          />
+        </Grid>
+        <Grid item mt={-1}>
+          <GalleryPagination
+            pages={pages}
+            default_offset={offset}
+            key={[ha, hs]}
+          />
+        </Grid>
+      </Grid>
+    </Box>
   )
 }
 
