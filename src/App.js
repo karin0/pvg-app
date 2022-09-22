@@ -308,8 +308,7 @@ class App extends Component {
       .then(
         (res) => {
           const resp = res.items.flatMap((illust) => {
-            const [pid, title, aid, author, tags, pages, caption, date, san] =
-              illust
+            const [pid, title, aid, author, tags, pages, date, san] = illust
             return pages
               .map((page, ind) => {
                 const [w, h, pre, fn] = page
@@ -327,7 +326,6 @@ class App extends Component {
                   iid: pid * 200 + ind,
                   ori: 'img' + nav,
                   thu: pre + nav,
-                  caption,
                   date,
                   san,
                 }
@@ -335,6 +333,7 @@ class App extends Component {
               .filter((o) => o.w && o.h)
           })
           const resp_safe = resp.filter((img) => {
+            if (img.san !== 2) return false
             for (const tag of img.tags) if (reg_bad.test(tag)) return false
             return true
           })
@@ -551,7 +550,6 @@ class App extends Component {
                       <TextField fullWidth color="primary" {...params} />
                     )}
                     onChange={(e, value) => {
-                      console.log('upd', value)
                       this.set_tags(
                         value.map((t) => (typeof t === 'string' ? t : t[0]))
                       )
