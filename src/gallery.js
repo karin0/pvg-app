@@ -1,19 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react'
 
-import {
-  AppBar,
-  Box,
-  Chip,
-  Fab,
-  Fade,
-  Grid,
-  Link,
-  Pagination,
-  TextField,
-  Toolbar,
-  Typography,
-  useMediaQuery,
-} from '@mui/material'
+import { Box, Chip, Fab, Fade, Grid, Link, Typography } from '@mui/material'
 import makeStyles from '@mui/styles/makeStyles'
 import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan'
 
@@ -22,6 +9,7 @@ import Gallery from 'react-photo-gallery'
 
 import { host, images_per_page } from './env.js'
 import UpscalingDialog from './UpscalingDialog.js'
+import InfiniteScroll from 'react-infinite-scroll-component'
 
 const TagUpdaterContext = React.createContext()
 const FilterTagsContext = React.createContext()
@@ -192,110 +180,46 @@ function GalleryView(props) {
   )
 }
 
-const char_code_0 = '0'.charCodeAt(0)
-const char_code_9 = '9'.charCodeAt(0)
-
-function PaginationInput(props) {
-  const [val, set_val] = useState(1)
-
-  return (
-    <TextField
-      style={{
-        width: 70,
-        marginTop: 5,
-      }}
-      inputProps={{
-        style: {
-          fontSize: '100%',
-        },
-      }}
-      type="text"
-      size="small"
-      margin="dense"
-      onChange={(e) => {
-        const nv = e.target.value
-        if (nv === '') return set_val(0)
-
-        for (let i = 0; i < nv.length; ++i) {
-          const c = nv.charCodeAt(i)
-          if (c < char_code_0 || c > char_code_9) return (e.target.value = val)
-        }
-
-        const x = parseInt(nv, 10)
-        if ((x >= 1 && x <= props.tot) || (x > 0 && x < val)) return set_val(x)
-
-        e.target.value = val
-      }}
-      onKeyPress={(e) => {
-        if (e.key === 'Enter' && val >= 1 && val <= props.tot)
-          props.switch(val - 1)
-      }}
-    />
-  )
-}
-
-const useStylesGP = makeStyles((theme) => ({
-  drawer: {
-    background: 'rgba(255, 255, 255, 0.9)',
-    display: 'flex',
-    height: 38,
-  } /* ,
-    middle: {
-        position: 'absolute',
-        left: '50%',
-        transform: 'translateX(-50%)'
-    } */,
-}))
-
-const lg_drawer_min_width = 700
-
 function GalleryPagination(props) {
-  const [off, set_offset] = useState(props.default_offset)
-
+  const [views, set_views] = useState([])
   const tot = props.pages.length
-  let images, views
-  if (off < tot) {
-    images = props.pages[off]
-    views = props.modal_pages[off]
-  } else images = views = []
-
-  const lg = useMediaQuery(`(min-width:${lg_drawer_min_width}px)`)
+  const off = views.length
+  const has_more = off < tot
+  if (views.length === 0 && has_more) {
+    set_views([
+      <GalleryView
+        key={0}
+        images={props.pages[0]}
+        views={props.modal_pages[0]}
+      />,
+    ])
+  }
+  console.log('loaded', off)
 
   return (
-    <>
-      <Box my={3} width="100%">
-        <GalleryView images={images} views={views} />
-      </Box>
-      <AppBar
-        position="fixed"
-        sx={{ top: 'auto', bottom: 0 }}
-        className="page-bar"
-        color="info"
+    <Box my={3}>
+      <InfiniteScroll
+        dataLength={off}
+        next={() => {
+          set_views([
+            ...views,
+            <GalleryView
+              key={off}
+              images={props.pages[off]}
+              views={props.modal_pages[off]}
+            />,
+          ])
+        }}
+        hasMore={has_more}
+        loader={
+          <div className="loader" key={-1}>
+            Loading ...
+          </div>
+        }
       >
-        <Toolbar variant="dense">
-          <Grid
-            container
-            direction="row"
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Pagination
-              count={tot}
-              page={off + 1}
-              size="small"
-              onChange={(_, v) => {
-                window.scrollTo(0, 0)
-                set_offset(v - 1)
-              }}
-              color="primary"
-              siblingRange={lg ? 2 : 1}
-              boundaryRange={lg ? 3 : 1}
-            />
-            <PaginationInput switch={set_offset} tot={tot} />
-          </Grid>
-        </Toolbar>
-      </AppBar>
-    </>
+        {views}
+      </InfiniteScroll>
+    </Box>
   )
 }
 
