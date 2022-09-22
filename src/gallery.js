@@ -1,12 +1,23 @@
 import React, { useContext, useEffect, useState } from 'react'
 
-import { Box, Chip, Fab, Fade, Grid, Link, Typography } from '@mui/material'
+import {
+  Box,
+  Chip,
+  Fab,
+  Fade,
+  Grid,
+  ImageList,
+  ImageListItem,
+  Link,
+  Typography,
+  useMediaQuery,
+} from '@mui/material'
 import makeStyles from '@mui/styles/makeStyles'
 import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan'
 
 import Carousel, { Modal, ModalGateway } from 'react-images'
-import Gallery from 'react-photo-gallery'
 
+import theme from './theme'
 import { host, images_per_page } from './env.js'
 import UpscalingDialog from './UpscalingDialog.js'
 import InfiniteScroll from 'react-infinite-scroll-component'
@@ -156,19 +167,30 @@ function GalleryView(props) {
   const [index, set_index] = useState(-1)
 
   const close_modal = () => set_index(-1)
+  const md = useMediaQuery(theme.breakpoints.up('md'))
 
   return (
     <>
-      <Gallery
-        photos={props.images}
-        onClick={(e, { index }) => set_index(index)}
-      />
+      <ImageList variant="masonry" cols={md ? 3 : 2} gap={md ? 8 : 2}>
+        {props.images.map((img, i) => (
+          <ImageListItem key={img.ori}>
+            <img
+              src={host + img.ori}
+              loading="lazy"
+              onClick={() => set_index(i)}
+              alt={img.title}
+              width={img.w}
+              height={img.h}
+            />
+          </ImageListItem>
+        ))}
+      </ImageList>
       <ModalGateway>
         {index >= 0 ? (
           <Modal onClose={close_modal}>
             <Carousel
               currentIndex={index >= 0 ? index : 0}
-              views={props.views.map((img) => ({
+              views={props.images.map((img) => ({
                 source: host + img.ori,
                 caption: <ImageCaption img={img} close_modal={close_modal} />,
               }))}
@@ -186,13 +208,7 @@ function GalleryPagination(props) {
   const off = views.length
   const has_more = off < tot
   if (views.length === 0 && has_more) {
-    set_views([
-      <GalleryView
-        key={0}
-        images={props.pages[0]}
-        views={props.modal_pages[0]}
-      />,
-    ])
+    set_views([<GalleryView key={0} images={props.pages[0]} />])
   }
   console.log('loaded', off)
 
@@ -203,11 +219,7 @@ function GalleryPagination(props) {
         next={() => {
           set_views([
             ...views,
-            <GalleryView
-              key={off}
-              images={props.pages[off]}
-              views={props.modal_pages[off]}
-            />,
+            <GalleryView key={off} images={props.pages[off]} />,
           ])
         }}
         hasMore={has_more}
@@ -224,10 +236,8 @@ function GalleryPagination(props) {
 }
 
 function PvgGallery(props) {
-  const pages = [],
-    modal_pages = []
+  const pages = []
   let page = [],
-    modal_page = [],
     offset = 0,
     ha = 0,
     hs = 0,
@@ -240,28 +250,20 @@ function PvgGallery(props) {
     sa.add(img.aid)
 
     ++cnt
-    ha ^= img.pid + img.w + cnt + hs
-    hs += img.pid + img.h + ((x) => (x >= 0 ? x : -2 * x))(cnt ^ ha)
+    ha ^= img.pid + (img.w || 0) + cnt + hs
+    hs += img.pid + (img.h || 0) + ((x) => (x >= 0 ? x : -2 * x))(cnt ^ ha)
 
     if (img.iid === props.locating_id) offset = pages.length
 
-    page.push({
-      src: host + img.thu,
-      width: img.w,
-      height: img.h,
-    })
-    modal_page.push(img)
+    page.push(img)
 
     if (page.length >= images_per_page) {
       pages.push(page)
-      modal_pages.push(modal_page)
       page = []
-      modal_page = []
     }
   }
   if (page.length) {
     pages.push(page)
-    modal_pages.push(modal_page)
   }
 
   return (
@@ -272,12 +274,7 @@ function PvgGallery(props) {
           users
         </Typography>
       </Box>
-      <GalleryPagination
-        pages={pages}
-        modal_pages={modal_pages}
-        default_offset={offset}
-        key={[ha, hs]}
-      />
+      <GalleryPagination pages={pages} default_offset={offset} key={[ha, hs]} />
     </>
   )
 }

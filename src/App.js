@@ -309,28 +309,27 @@ class App extends Component {
         (res) => {
           const resp = res.items.flatMap((illust) => {
             const [pid, title, aid, author, tags, pages, date, san] = illust
-            return pages
-              .map((page, ind) => {
-                const [w, h, pre, fn] = page
-                const nav = `/${pid}/${ind}`
-                return {
-                  pid,
-                  ind,
-                  title,
-                  author,
-                  aid,
-                  tags,
-                  w,
-                  h,
-                  fn,
-                  iid: pid * 200 + ind,
-                  ori: 'img' + nav,
-                  thu: pre + nav,
-                  date,
-                  san,
-                }
-              })
-              .filter((o) => o.w && o.h)
+            return pages.map((page, ind) => {
+              const [w, h, pre, fn] = page
+              const nav = `/${pid}/${ind}`
+              // FIXME: w & h here may be referred by Upscale window. Can we calculate them later?
+              return {
+                pid,
+                ind,
+                title,
+                author,
+                aid,
+                tags,
+                w: w || undefined,
+                h: h || undefined,
+                fn,
+                iid: pid * 200 + ind,
+                ori: 'img' + nav,
+                thu: pre + nav,
+                date,
+                san,
+              }
+            })
           })
           const resp_safe = resp.filter((img) => {
             if (img.san !== 2) return false
