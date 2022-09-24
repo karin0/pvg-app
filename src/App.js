@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import './index.css'
 
 import 'typeface-roboto'
@@ -133,56 +133,51 @@ function get_tag_list(imgs) {
   )
 }
 
-class App extends Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      error: null,
-      loaded: false,
-      resp: [],
-      tags_curr: [],
-      tags_curr_map: null,
-      locating_id: -1,
-      drawer_open: false,
-      safe: !!+localStorage.getItem('safe') || false,
-      resort: false,
-    }
-  }
+function App(props) {
+  const [error, set_error] = useState(null)
+  const [loaded, set_loaded] = useState(false)
+  const [resp, set_resp] = useState([])
+  const [tags_curr, set_tags_curr] = useState([])
+  const [tags_curr_map, set_tags_curr_map] = useState(null)
+  const [locating_id, set_locating_id] = useState(-1)
+  const [drawer_open, set_drawer_open] = useState(false)
+  const [safe, set_safe] = useState(!!+localStorage.getItem('safe') || false)
+  const [resort, set_resort] = useState(false)
 
-  get_unsorted_images = () => {
-    const imgs = this.state.resp
-    if (this.state.safe)
+  const unsorted_images = useMemo(() => {
+    const imgs = resp
+    if (safe)
       return imgs.filter((img) => {
         if (img.san !== 2) return false
         for (const tag of img.tags) if (reg_bad.test(tag)) return false
         return true
       })
     return imgs.slice(0)
-  }
+  }, [resp, safe])
 
-  get_images = () => {
-    const imgs = this.get_unsorted_images()
-    if (this.state.resort)
+  const images = useMemo(() => {
+    const imgs = unsorted_images
+    if (resort)
       imgs.sort((a, b) =>
         compare_fallback(b.pid, a.pid, () => compare(a.ind, b.ind))
       )
     return imgs
-  }
+  }, [unsorted_images, resort])
 
-  get_tags = () => {
-    return get_tag_list(this.get_unsorted_images())
-  }
+  const tags = useMemo(() => {
+    return get_tag_list(unsorted_images)
+  }, [unsorted_images])
 
-  update = () => {
+  const update = () => {
     // console.log('update with', this.state.tags_curr, this.state.locating_id);
-    const tags = this.state.tags_curr // reliable, for update is used as callback from setState
+    const tags = tags_curr // reliable, for update is used as callback from setState
     const tag_map = new Map()
     for (let i = 0; i < tags.length; ++i) tag_map.set(tags[i], i)
     fetch(host + 'select', {
       crossDomain: true,
       method: 'POST',
       body: JSON.stringify({
-        filters: this.state.tags_curr,
+        filters: tags_curr,
       }),
       headers: new Headers({
         'Content-Type': 'application/json',
@@ -215,201 +210,166 @@ class App extends Component {
               }
             })
           })
-          this.setState(
-            {
-              loaded: true,
-              error: null,
-              resp,
-              tags_curr_map: tag_map,
-            },
-            this.set_images
-          )
+          set_loaded(true)
+          set_error(null)
+          set_resp(resp)
+          set_tags_curr_map(tag_map)
         },
         (error) => {
-          this.setState({
-            loaded: true,
-            error: error,
-            resp: [],
-            tags_curr_map: tag_map,
-          })
+          set_loaded(true)
+          set_error(error)
+          set_resp([])
+          set_tags_curr_map(tag_map)
         }
       )
   }
 
-  set_tags = (tags) => {
-    // console.log('sets', tags);
+  const set_tags = (tags) => {
     const s = new Set()
     const tags_curr = tags.filter((tag) => {
       if (s.has(tag)) return false
       s.add(tag)
       return true
     })
-    this.setState(
-      {
-        tags_curr,
-        locating_id: -1,
-      },
-      this.update
-    )
+    set_tags_curr(tags_curr)
+    set_locating_id(-1)
   }
 
-  toggle_tag = (tag, id, pos) => {
-    // console.log('add', tag);
-    this.setState((state) => {
-      if (isNaN(pos))
-        return {
-          tags_curr: state.tags_curr.concat([tag]),
-          locating_id: id,
-        }
-      else {
-        const tags = state.tags_curr.slice(0)
-        tags.splice(pos, 1)
-        return {
-          tags_curr: tags,
-          locating_id: id,
-        }
-      }
-    }, this.update)
+  const toggle_tag = (tag, id, pos) => {
+    if (isNaN(pos)) set_tags_curr(tags_curr.concat([tag]))
+    else {
+      const tags = tags_curr.slice(0)
+      tags.splice(pos, 1)
+      set_tags_curr(tags)
+    }
+    set_locating_id(id)
   }
 
-  open_drawer = () => this.setState({ drawer_open: true })
-  close_drawer = () => this.setState({ drawer_open: false })
+  const open_drawer = () => set_drawer_open(true)
+  const close_drawer = () => set_drawer_open(false)
 
-  refresh = () => {
-    this.setState(
-      {
-        locating_id: -1,
-      },
-      this.update
-    )
-    this.close_drawer()
+  const refresh = () => {
+    set_locating_id(-1)
+    close_drawer()
   }
 
-  toggle_safe = () =>
-    this.setState((state) => {
-      localStorage.setItem('safe', state.safe ? '0' : '1')
-      return {
-        locating_id: -1,
-        safe: !state.safe,
-      }
-    })
-
-  toggle_resort = () =>
-    this.setState((state) => ({
-      locating_id: -1,
-      resort: !state.resort,
-    }))
-
-  componentDidMount() {
-    this.update()
+  const toggle_safe = () => {
+    localStorage.setItem('safe', safe ? '0' : '1')
+    set_locating_id(-1)
+    set_safe(!safe)
   }
 
-  render() {
-    const { classes } = this.props
+  const toggle_resort = () => {
+    set_locating_id(-1)
+    set_resort(!resort)
+  }
 
-    return (
-      <StyledEngineProvider injectFirst>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <HideOnScroll>
-            <AppBar position="fixed">
-              <Toolbar variant="dense">
-                <IconButton
-                  edge="start"
-                  className={classes.menu_button}
-                  color="inherit"
-                  onClick={this.open_drawer}
-                  size="large"
-                >
-                  <MenuIcon />
-                </IconButton>
-                <div className={classes.box}>
-                  <Autocomplete
-                    multiple
-                    freeSolo
-                    autoSelect
-                    size="small"
-                    selectOnFocus
-                    clearOnBlur
-                    handleHomeEndKeys
-                    options={this.get_tags()}
-                    ListboxComponent={ListboxComponent}
-                    getOptionLabel={(o) => o[0]}
-                    renderOption={(props, tag) => {
-                      return (
-                        <li {...props} style={{ height: 10 }}>
-                          {tag[0]}
-                          <Chip
-                            label={tag[1]}
-                            size="small"
-                            style={{
-                              marginLeft: '1em',
-                            }}
-                          />
-                        </li>
-                      )
-                    }}
-                    renderTags={(value, getTagProps) =>
-                      value.map((option, index) => (
+  useEffect(() => {
+    update()
+  }, [tags_curr, locating_id])
+
+  const { classes } = props
+
+  return (
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <HideOnScroll>
+          <AppBar position="fixed">
+            <Toolbar variant="dense">
+              <IconButton
+                edge="start"
+                className={classes.menu_button}
+                color="inherit"
+                onClick={open_drawer}
+                size="large"
+              >
+                <MenuIcon />
+              </IconButton>
+              <div className={classes.box}>
+                <Autocomplete
+                  multiple
+                  freeSolo
+                  autoSelect
+                  size="small"
+                  selectOnFocus
+                  clearOnBlur
+                  handleHomeEndKeys
+                  options={tags}
+                  ListboxComponent={ListboxComponent}
+                  getOptionLabel={(o) => o[0]}
+                  renderOption={(props, tag) => {
+                    return (
+                      <li {...props} style={{ height: 10 }}>
+                        {tag[0]}
                         <Chip
-                          classes={{ root: classes.chip }}
-                          variant="outlined"
-                          color="primary"
-                          label={option}
-                          {...getTagProps({ index })}
+                          label={tag[1]}
+                          size="small"
+                          style={{
+                            marginLeft: '1em',
+                          }}
                         />
-                      ))
-                    }
-                    renderInput={(params) => (
-                      <TextField fullWidth color="primary" {...params} />
-                    )}
-                    onChange={(e, value) => {
-                      this.set_tags(
-                        value.map((t) => (typeof t === 'string' ? t : t[0]))
-                      )
-                    }}
-                    value={this.state.tags_curr}
-                    classes={{
-                      clearIndicator: classes.clear_indicator,
-                      inputRoot: classes.input_root,
-                      input: classes.input,
-                    }}
-                  />
-                </div>
-              </Toolbar>
-            </AppBar>
-          </HideOnScroll>
-          <AppDrawer
-            open={this.state.drawer_open}
-            setOpen={(v) => this.setState({ drawer_open: v })}
-            onRefresh={this.refresh}
-            safe={this.state.safe}
-            toggleSate={this.toggle_safe}
-            resort={this.state.resort}
-            toggleResort={this.toggle_resort}
-          />
-          <Container className={classes.main} maxWidth="lg">
-            {this.state.loaded ? (
-              this.state.error ? (
-                'Error'
-              ) : (
-                <TagUpdaterContext.Provider value={this.toggle_tag}>
-                  <FilterTagsContext.Provider value={this.state.tags_curr_map}>
-                    <PvgGallery
-                      images={this.get_images()}
-                      locating_id={this.state.locating_id}
-                    />
-                  </FilterTagsContext.Provider>
-                </TagUpdaterContext.Provider>
-              )
+                      </li>
+                    )
+                  }}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => (
+                      <Chip
+                        classes={{ root: classes.chip }}
+                        variant="outlined"
+                        color="primary"
+                        label={option}
+                        {...getTagProps({ index })}
+                      />
+                    ))
+                  }
+                  renderInput={(params) => (
+                    <TextField fullWidth color="primary" {...params} />
+                  )}
+                  onChange={(e, value) => {
+                    set_tags(
+                      value.map((t) => (typeof t === 'string' ? t : t[0]))
+                    )
+                  }}
+                  value={tags_curr}
+                  classes={{
+                    clearIndicator: classes.clear_indicator,
+                    inputRoot: classes.input_root,
+                    input: classes.input,
+                  }}
+                />
+              </div>
+            </Toolbar>
+          </AppBar>
+        </HideOnScroll>
+        <AppDrawer
+          classes={classes}
+          open={drawer_open}
+          setOpen={set_drawer_open}
+          onRefresh={refresh}
+          safe={safe}
+          toggleSafe={toggle_safe}
+          resort={resort}
+          toggleResort={toggle_resort}
+        />
+        <Container className={classes.main} maxWidth="lg">
+          {loaded ? (
+            error ? (
+              'Error'
             ) : (
-              'Loading..'
-            )}
-          </Container>
-        </ThemeProvider>
-      </StyledEngineProvider>
-    )
-  }
+              <TagUpdaterContext.Provider value={toggle_tag}>
+                <FilterTagsContext.Provider value={tags_curr_map}>
+                  <PvgGallery images={images} locating_id={locating_id} />
+                </FilterTagsContext.Provider>
+              </TagUpdaterContext.Provider>
+            )
+          ) : (
+            'Loading..'
+          )}
+        </Container>
+      </ThemeProvider>
+    </StyledEngineProvider>
+  )
 }
 
 export default withStyles(styles)(App)
