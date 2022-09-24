@@ -1,34 +1,15 @@
-import React, { Component, useState } from 'react'
+import React, { Component } from 'react'
 import './index.css'
 
 import 'typeface-roboto'
 
 import {
   AppBar,
-  Avatar,
-  Box,
-  Button,
-  Card,
-  CardHeader,
   Chip,
   Container,
   CssBaseline,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Divider,
-  Drawer,
   IconButton,
-  Link,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemSecondaryAction,
-  ListItemText,
   Slide,
-  Switch,
   TextField,
   Toolbar,
   useScrollTrigger,
@@ -40,24 +21,14 @@ import withStyles from '@mui/styles/withStyles'
 import Autocomplete from '@mui/material/Autocomplete'
 
 import MenuIcon from '@mui/icons-material/Menu'
-import UpdateIcon from '@mui/icons-material/Update'
-import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
-import EcoIcon from '@mui/icons-material/HealthAndSafety'
-import DoneIcon from '@mui/icons-material/Done'
-import SyncIcon from '@mui/icons-material/Sync'
-import RefreshIcon from '@mui/icons-material/Refresh'
-import SecurityIcon from '@mui/icons-material/Security'
-import DateRangeIcon from '@mui/icons-material/DateRange'
-import SettingsIcon from '@mui/icons-material/Settings'
-import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan'
 
 import ListboxComponent from './Listbox.js'
 import { FilterTagsContext, PvgGallery, TagUpdaterContext } from './gallery.js'
-import UpscalingDialog from './UpscalingDialog.js'
 import { host } from './env.js'
 import theme from './theme.js'
 
 import img_bg from './bg.png'
+import AppDrawer from './AppDrawer'
 
 function compare(a, b) {
   if (a < b) return -1
@@ -133,92 +104,6 @@ const styles = (theme) => ({
   },
 })
 
-function FullUpdateItem(props) {
-  const [dialog_open, set_open] = useState(false)
-
-  const open_dialog = () => set_open(true)
-  const close_dialog = () => set_open(false)
-
-  const confirm = () => {
-    window.open(host + 'action/update')
-    set_open(false)
-    props.on_confirm()
-  }
-
-  return (
-    <>
-      <ListItem button key="update" onClick={open_dialog}>
-        <ListItemIcon>
-          <SyncIcon />
-        </ListItemIcon>
-        <ListItemText primary="Full Update" />
-      </ListItem>
-      <Dialog open={dialog_open} onClose={close_dialog}>
-        <DialogTitle>Warning</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            The operation may take a long time if excessive number of illusts
-            are bookmarked. An incremental update is suggested in most cases.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={confirm}
-            variant="contained"
-            color="secondary"
-            disableElevation
-          >
-            Continue
-          </Button>
-          <Button onClick={close_dialog} color="primary" autoFocus>
-            Cancel
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
-  )
-}
-
-function UpscalingItem() {
-  const [dialog_open, set_open] = useState(false)
-
-  const open_dialog = () => set_open(true)
-  const close_dialog = () => set_open(false)
-
-  return (
-    <>
-      <ListItem button key="upscaling" onClick={open_dialog}>
-        <ListItemIcon>
-          <SettingsOverscanIcon />
-        </ListItemIcon>
-        <ListItemText primary="Upscaling" />
-      </ListItem>
-      <UpscalingDialog open={dialog_open} on_close={close_dialog} />
-    </>
-  )
-}
-
-const action_mapper = (cb) => (x) =>
-  (
-    <ListItem
-      button
-      key={x[2]}
-      component="a"
-      href={host + 'action/' + x[2]}
-      target="_blank"
-      onClick={cb}
-    >
-      <ListItemIcon>{x[1]}</ListItemIcon>
-      <ListItemText primary={x[0]} />
-    </ListItem>
-  )
-const action_listitems = [
-  ['Incremental Update', <UpdateIcon />, 'qupd'],
-  ['Download All', <CloudDownloadIcon />, 'download'],
-  ['Greendam', <EcoIcon />, 'greendam'],
-  ['QUDG', <DoneIcon />, 'qudg'],
-]
-
 const reg_bad = new RegExp(
   decodeURIComponent(
     atob(
@@ -259,13 +144,8 @@ class App extends Component {
       tags_curr_map: null,
       locating_id: -1,
       drawer_open: false,
-      card_title: 'Unknown',
-      card_title_2: null,
-      card_subtitle: '',
-      ver: 'Unknown',
       safe: !!+localStorage.getItem('safe') || false,
       resort: false,
-      settings_open: false,
     }
   }
 
@@ -420,61 +300,8 @@ class App extends Component {
       resort: !state.resort,
     }))
 
-  open_settings = () => this.setState({ settings_open: true })
-  close_settings = () => this.setState({ settings_open: false })
-
   componentDidMount() {
-    Promise.all([
-      new Promise((resolve) =>
-        fetch(host + 'user', {
-          crossDomain: true,
-          method: 'GET',
-        })
-          .then((res) => res.json())
-          .then(
-            (res) => {
-              if (res.nick) {
-                const sta = {
-                  card_title: res.nick,
-                  card_subtitle: res.mail,
-                  card_title_2:
-                    res.nick === res.name ? null : '(' + res.name + ')',
-                }
-                this.setState(sta, resolve)
-              } else
-                this.setState(
-                  {
-                    card_title: res.name,
-                    card_title_2: null,
-                    card_subtitle: '',
-                  },
-                  resolve
-                )
-            },
-            (error) => {
-              this.setState(
-                {
-                  card_title: 'Unknown',
-                  card_title_2: null,
-                  card_subtitle: '',
-                },
-                resolve
-              )
-            }
-          )
-      ),
-      new Promise((resolve) =>
-        fetch(host + 'ver', {
-          crossDomain: true,
-          method: 'GET',
-        })
-          .then((res) => res.json())
-          .then(
-            (res) => this.setState({ ver: res.ver }, resolve),
-            (error) => this.setState({ ver: 'Unknown' }, resolve)
-          )
-      ),
-    ]).then(this.update)
+    this.update()
   }
 
   render() {
@@ -552,123 +379,15 @@ class App extends Component {
               </Toolbar>
             </AppBar>
           </HideOnScroll>
-          <Drawer
+          <AppDrawer
             open={this.state.drawer_open}
-            onClose={this.close_drawer}
-            classes={{ paper: classes.drawer }}
-          >
-            <Card classes={{ root: classes.card }}>
-              <Box mt={3} ml={2} mb={-0.5}>
-                <Avatar src={host + 'avatar'} className={classes.avatar} />
-              </Box>
-              <CardHeader
-                title={
-                  this.state.card_title_2 ? (
-                    <>
-                      <Box fontWeight="fontWeightBold" display="inline">
-                        {this.state.card_title}
-                      </Box>
-                      <Box ml={1} display="inline">
-                        {this.state.card_title_2}
-                      </Box>
-                    </>
-                  ) : (
-                    <Box fontWeight="fontWeightBold">
-                      {this.state.card_title}
-                    </Box>
-                  )
-                }
-                subheader={this.state.card_subtitle}
-                classes={{
-                  title: classes.card_text,
-                  subheader: classes.card_text,
-                }}
-              />
-            </Card>
-            <div className={classes.list} role="presentation">
-              <List className={classes.list}>
-                <UpscalingItem />
-                <ListItem button key="refresh" onClick={this.refresh}>
-                  <ListItemIcon>
-                    <RefreshIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Refresh" />
-                </ListItem>
-              </List>
-              <Divider />
-              <List className={classes.list}>
-                {action_listitems.map(action_mapper(this.close_drawer))}
-              </List>
-              <Divider />
-              <List className={classes.list}>
-                <ListItem>
-                  <ListItemIcon>
-                    <SecurityIcon />
-                  </ListItemIcon>{' '}
-                  <ListItemText primary="Safe Mode" />
-                  <ListItemSecondaryAction>
-                    <Switch
-                      edge="end"
-                      onChange={this.toggle_safe}
-                      checked={this.state.safe}
-                    />
-                  </ListItemSecondaryAction>
-                </ListItem>
-              </List>
-              <ListItem button key="options" onClick={this.open_settings}>
-                <ListItemIcon>
-                  <SettingsIcon />
-                </ListItemIcon>
-                <ListItemText primary="Options" />
-              </ListItem>
-              <Dialog
-                open={this.state.settings_open}
-                onClose={this.close_settings}
-                maxWidth="sm"
-                fullWidth={true}
-              >
-                <DialogTitle>Options</DialogTitle>
-                <DialogContent>
-                  <List style={{ width: '100%' }}>
-                    <ListItem>
-                      <ListItemIcon>
-                        <DateRangeIcon />
-                      </ListItemIcon>
-                      <ListItemText primary="Sort by Dates" />
-                      <ListItemSecondaryAction>
-                        <Switch
-                          edge="end"
-                          onChange={this.toggle_resort}
-                          checked={this.state.resort}
-                        />
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    <FullUpdateItem on_confirm={this.close_drawer} />
-                  </List>
-                </DialogContent>
-              </Dialog>
-              <Divider />
-              <List>
-                <ListItem key="info">
-                  <ListItemText
-                    primary={
-                      <>
-                        <Link
-                          href="https://github.com/karin0/pvg"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          pvg-ng
-                        </Link>
-                        <br />
-                        {this.state.ver}
-                      </>
-                    }
-                  />
-                </ListItem>
-              </List>
-            </div>
-          </Drawer>
+            setOpen={(v) => this.setState({ drawer_open: v })}
+            onRefresh={this.refresh}
+            safe={this.state.safe}
+            toggleSate={this.toggle_safe}
+            resort={this.state.resort}
+            toggleResort={this.toggle_resort}
+          />
           <Container className={classes.main} maxWidth="lg">
             {this.state.loaded ? (
               this.state.error ? (
