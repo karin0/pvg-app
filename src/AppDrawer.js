@@ -120,16 +120,7 @@ const action_listitems = [
 ]
 
 function AppDrawer(props) {
-  const {
-    classes,
-    open,
-    setOpen,
-    onRefresh,
-    safe,
-    toggleSafe,
-    resort,
-    toggleResort,
-  } = props
+  const { classes, open, setOpen, onRefresh, safe, toggleSafe } = props
 
   const [settings_open, set_settings_open] = useState(false)
   const [user, set_user] = useState(null)
@@ -245,15 +236,6 @@ function AppDrawer(props) {
           <DialogTitle>Options</DialogTitle>
           <DialogContent>
             <List style={{ width: '100%' }}>
-              <ListItem>
-                <ListItemIcon>
-                  <DateRangeIcon />
-                </ListItemIcon>
-                <ListItemText primary="Sort by Dates" />
-                <ListItemSecondaryAction>
-                  <Switch edge="end" onChange={toggleResort} checked={resort} />
-                </ListItemSecondaryAction>
-              </ListItem>
               <FullUpdateItem on_confirm={close_drawer} />
             </List>
           </DialogContent>

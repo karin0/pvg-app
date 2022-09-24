@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useState } from 'react'
 
 import {
   Box,
@@ -9,6 +9,7 @@ import {
   Grid,
   ImageList,
   ImageListItem,
+  ImageListItemBar,
   Link,
   Switch,
   Typography,
@@ -176,42 +177,92 @@ function ImageCaption(props) {
   )
 }
 
-function GalleryView(props) {
-  const [index, set_index] = useState(-1)
+const ShowTitleContext = React.createContext(false)
 
-  const close_modal = () => set_index(-1)
+function CarouselModal(props) {
+  const { index, setIndex, images } = props
+  const onClose = () => setIndex(-1)
+  return (
+    <ModalGateway>
+      {index >= 0 ? (
+        <Modal onClose={onClose}>
+          <Carousel
+            currentIndex={index >= 0 ? index : 0}
+            views={images.map((img) => ({
+              source: host + img.ori,
+              caption: <ImageCaption img={img} close_modal={onClose} />,
+            }))}
+          />
+        </Modal>
+      ) : null}
+    </ModalGateway>
+  )
+}
+
+const ModalCallbacksContext = React.createContext(undefined)
+
+function GalleryView(props) {
   const md = useMediaQuery(theme.breakpoints.up('md'))
 
+  const show_title = useContext(ShowTitleContext)
+  const show_images = useContext(ModalCallbacksContext)
+
+  const { images } = props
+
   return (
-    <>
-      <ImageList variant="masonry" cols={md ? 3 : 2} gap={md ? 8 : 2}>
-        {props.images.map((img, i) => (
+    <ImageList variant="masonry" cols={md ? 3 : 2} gap={md ? 4 : 2}>
+      {images.map((img, i) => {
+        const { pages } = img
+        const multi_pages = pages && pages.length > 1
+        return (
           <ImageListItem key={img.ori}>
             <img
               src={host + img.ori}
               loading="lazy"
-              onClick={() => set_index(i)}
+              onClick={
+                multi_pages
+                  ? () => show_images(img.pages, 0)
+                  : () => show_images(images, i)
+              }
               alt={img.title}
               width={img.w}
               height={img.h}
             />
+            {show_title ? (
+              <ImageListItemBar
+                title={img.title}
+                subtitle={img.author}
+                actionIcon={
+                  multi_pages && (
+                    <Chip
+                      label={pages.length}
+                      color="info"
+                      style={{ marginRight: 8 }}
+                      size="small"
+                    />
+                  )
+                }
+              />
+            ) : (
+              multi_pages && (
+                <ImageListItemBar
+                  actionIcon={
+                    <Chip
+                      label={pages.length}
+                      color="info"
+                      style={{
+                        margin: '6px 8px 6px 0',
+                      }}
+                      size="small"
+                    />
+                  }
+                />
+              )
+            )}
           </ImageListItem>
-        ))}
-      </ImageList>
-      <ModalGateway>
-        {index >= 0 ? (
-          <Modal onClose={close_modal}>
-            <Carousel
-              currentIndex={index >= 0 ? index : 0}
-              views={props.images.map((img) => ({
-                source: host + img.ori,
-                caption: <ImageCaption img={img} close_modal={close_modal} />,
-              }))}
-            />
-          </Modal>
-        ) : null}
-      </ModalGateway>
-    </>
+        )
+      })}
+    </ImageList>
   )
 }
 
@@ -225,31 +276,91 @@ function GalleryPagination(props) {
   }
   console.log('loaded', off)
 
+  const [now_pages, set_now_pages] = useState([])
+  const [now_index, set_now_index] = useState(-1)
+
+  function show_images(images, index) {
+    set_now_pages(images)
+    set_now_index(index)
+  }
+
   return (
-    <InfiniteScroll
-      dataLength={off}
-      next={() => {
-        set_views([
-          ...views,
-          <GalleryView key={off} images={props.pages[off]} />,
-        ])
-      }}
-      hasMore={has_more}
-      loader={
-        <div className="loader" key={-1}>
-          Loading ...
-        </div>
+    <>
+      <ModalCallbacksContext.Provider value={show_images}>
+        <InfiniteScroll
+          dataLength={off}
+          next={() => {
+            set_views([
+              ...views,
+              <GalleryView key={off} images={props.pages[off]} />,
+            ])
+          }}
+          hasMore={has_more}
+          loader={
+            <div className="loader" key={-1}>
+              Loading ...
+            </div>
+          }
+        >
+          {views}
+        </InfiniteScroll>
+      </ModalCallbacksContext.Provider>
+      <CarouselModal
+        index={now_index}
+        setIndex={set_now_index}
+        images={now_pages}
+      />
+    </>
+  )
+}
+
+function GallerySwitch(props) {
+  return (
+    <FormControlLabel
+      style={{ float: 'right' }}
+      control={
+        <Switch
+          checked={props.checked}
+          onChange={(e) => props.setChecked(e.target.checked)}
+          size="small"
+        />
       }
-    >
-      {views}
-    </InfiniteScroll>
+      label={props.label}
+    />
   )
 }
 
 function PvgGallery(props) {
+  const [resorted, set_resorted] = useState(false)
   const [reversed, set_reversed] = useState(false)
-  // FIXME: keep the order of pages in the same illust
-  const images = reversed ? props.images.slice().reverse() : props.images
+  const [expanded, set_expanded] = useState(false)
+  const [show_title, set_show_title] = useState(false)
+
+  const illusts = props.images
+  const images = useMemo(() => {
+    let imgs = illusts
+    let sliced = false
+    function as_slice() {
+      if (!sliced) {
+        sliced = true
+        imgs = imgs.slice(0)
+      }
+      return imgs
+    }
+    if (resorted) imgs = as_slice().sort((a, b) => b.pid - a.pid)
+    if (reversed) imgs = as_slice().reverse()
+    if (expanded) imgs = imgs.flatMap((o) => o.pages)
+    else
+      imgs = imgs.map((o) => ({
+        ...o.pages[0],
+        pages: o.pages,
+      }))
+    return imgs
+  }, [illusts, resorted, reversed, expanded])
+
+  const real_page_num = useMemo(() => {
+    return illusts.reduce((acc, o) => acc + o.pages.length, 0)
+  }, [illusts])
 
   const pages = []
   let page = [],
@@ -258,10 +369,8 @@ function PvgGallery(props) {
     hs = 0,
     cnt = 0
 
-  const s = new Set(),
-    sa = new Set()
+  const sa = new Set()
   for (const img of images) {
-    s.add(img.pid)
     sa.add(img.aid)
 
     ++cnt
@@ -286,26 +395,38 @@ function PvgGallery(props) {
       <Grid container>
         <Grid item style={{ width: '100%' }} px={2}>
           <Typography display="inline" color="textSecondary" variant="body2">
-            {props.images.length} pages from {s.size} illusts by {sa.size} users
+            {real_page_num} pages from {illusts.length} illusts by {sa.size}{' '}
+            users
           </Typography>
-          <FormControlLabel
-            style={{ float: 'right' }}
-            control={
-              <Switch
-                checked={reversed}
-                onChange={(e) => set_reversed(e.target.checked)}
-                size="small"
-              />
-            }
-            label="Reverse"
+          <GallerySwitch
+            label="Show Titles"
+            checked={show_title}
+            setChecked={set_show_title}
+          />
+          <GallerySwitch
+            label="Expanded"
+            checked={expanded}
+            setChecked={set_expanded}
+          />
+          <GallerySwitch
+            label="Reversed"
+            checked={reversed}
+            setChecked={set_reversed}
+          />
+          <GallerySwitch
+            label="Sort by Date"
+            checked={resorted}
+            setChecked={set_resorted}
           />
         </Grid>
         <Grid item mt={-1}>
-          <GalleryPagination
-            pages={pages}
-            default_offset={offset}
-            key={[ha, hs]}
-          />
+          <ShowTitleContext.Provider value={show_title}>
+            <GalleryPagination
+              pages={pages}
+              default_offset={offset}
+              key={[ha, hs]}
+            />
+          </ShowTitleContext.Provider>
         </Grid>
       </Grid>
     </Box>

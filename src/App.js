@@ -142,9 +142,8 @@ function App(props) {
   const [locating_id, set_locating_id] = useState(-1)
   const [drawer_open, set_drawer_open] = useState(false)
   const [safe, set_safe] = useState(!!+localStorage.getItem('safe') || false)
-  const [resort, set_resort] = useState(false)
 
-  const unsorted_images = useMemo(() => {
+  const images = useMemo(() => {
     const imgs = resp
     if (safe)
       return imgs.filter((img) => {
@@ -155,18 +154,9 @@ function App(props) {
     return imgs.slice(0)
   }, [resp, safe])
 
-  const images = useMemo(() => {
-    const imgs = unsorted_images
-    if (resort)
-      imgs.sort((a, b) =>
-        compare_fallback(b.pid, a.pid, () => compare(a.ind, b.ind))
-      )
-    return imgs
-  }, [unsorted_images, resort])
-
   const tags = useMemo(() => {
-    return get_tag_list(unsorted_images)
-  }, [unsorted_images])
+    return get_tag_list(images)
+  }, [images])
 
   const update = () => {
     // console.log('update with', this.state.tags_curr, this.state.locating_id);
@@ -186,9 +176,9 @@ function App(props) {
       .then((res) => res.json())
       .then(
         (res) => {
-          const resp = res.items.flatMap((illust) => {
-            const [pid, title, aid, author, tags, pages, date, san] = illust
-            return pages.map((page, ind) => {
+          const resp = res.items.map((illust) => {
+            const [pid, title, aid, author, tags, raw_pages, date, san] = illust
+            const pages = raw_pages.map((page, ind) => {
               const [w, h, pre, fn] = page
               const nav = `/${pid}/${ind}`
               // FIXME: w & h here may be referred by Upscale window. Can we calculate them later?
@@ -209,6 +199,16 @@ function App(props) {
                 san,
               }
             })
+            return {
+              pid,
+              title,
+              author,
+              aid,
+              tags,
+              pages,
+              date,
+              san,
+            }
           })
           set_loaded(true)
           set_error(null)
@@ -257,11 +257,6 @@ function App(props) {
     localStorage.setItem('safe', safe ? '0' : '1')
     set_locating_id(-1)
     set_safe(!safe)
-  }
-
-  const toggle_resort = () => {
-    set_locating_id(-1)
-    set_resort(!resort)
   }
 
   useEffect(() => {
@@ -349,8 +344,6 @@ function App(props) {
           onRefresh={refresh}
           safe={safe}
           toggleSafe={toggle_safe}
-          resort={resort}
-          toggleResort={toggle_resort}
         />
         <Container className={classes.main} maxWidth="lg">
           {loaded ? (
