@@ -255,11 +255,6 @@ class App extends Component {
       error: null,
       loaded: false,
       resp: [],
-      resp_safe: [],
-      resp_tag_list: [],
-      resp_tag_list_safe: [],
-      images: [],
-      tags_list: [],
       tags_curr: [],
       tags_curr_map: null,
       locating_id: -1,
@@ -274,20 +269,29 @@ class App extends Component {
     }
   }
 
-  set_images = () =>
-    this.setState((state) => {
-      let imgs = state.safe ? state.resp_safe : state.resp
-      if (this.state.resort)
-        imgs = imgs
-          .slice(0)
-          .sort((a, b) =>
-            compare_fallback(b.pid, a.pid, () => compare(a.ind, b.ind))
-          )
-      return {
-        images: imgs,
-        tags_list: state.safe ? state.resp_tag_list_safe : state.resp_tag_list,
-      }
-    })
+  get_unsorted_images = () => {
+    const imgs = this.state.resp
+    if (this.state.safe)
+      return imgs.filter((img) => {
+        if (img.san !== 2) return false
+        for (const tag of img.tags) if (reg_bad.test(tag)) return false
+        return true
+      })
+    return imgs.slice(0)
+  }
+
+  get_images = () => {
+    const imgs = this.get_unsorted_images()
+    if (this.state.resort)
+      imgs.sort((a, b) =>
+        compare_fallback(b.pid, a.pid, () => compare(a.ind, b.ind))
+      )
+    return imgs
+  }
+
+  get_tags = () => {
+    return get_tag_list(this.get_unsorted_images())
+  }
 
   update = () => {
     // console.log('update with', this.state.tags_curr, this.state.locating_id);
@@ -331,20 +335,12 @@ class App extends Component {
               }
             })
           })
-          const resp_safe = resp.filter((img) => {
-            if (img.san !== 2) return false
-            for (const tag of img.tags) if (reg_bad.test(tag)) return false
-            return true
-          })
           this.setState(
             {
               loaded: true,
               error: null,
               resp,
-              resp_safe,
               tags_curr_map: tag_map,
-              resp_tag_list: get_tag_list(resp),
-              resp_tag_list_safe: get_tag_list(resp_safe),
             },
             this.set_images
           )
@@ -354,11 +350,6 @@ class App extends Component {
             loaded: true,
             error: error,
             resp: [],
-            resp_safe: [],
-            resp_tag_list: [],
-            resp_tag_list_safe: [],
-            images: [],
-            tags_list: [],
             tags_curr_map: tag_map,
           })
         }
@@ -421,16 +412,13 @@ class App extends Component {
         locating_id: -1,
         safe: !state.safe,
       }
-    }, this.set_images)
+    })
 
   toggle_resort = () =>
-    this.setState(
-      (state) => ({
-        locating_id: -1,
-        resort: !state.resort,
-      }),
-      this.set_images
-    )
+    this.setState((state) => ({
+      locating_id: -1,
+      resort: !state.resort,
+    }))
 
   open_settings = () => this.setState({ settings_open: true })
   close_settings = () => this.setState({ settings_open: false })
@@ -517,7 +505,7 @@ class App extends Component {
                     selectOnFocus
                     clearOnBlur
                     handleHomeEndKeys
-                    options={this.state.tags_list}
+                    options={this.get_tags()}
                     ListboxComponent={ListboxComponent}
                     getOptionLabel={(o) => o[0]}
                     renderOption={(props, tag) => {
@@ -689,7 +677,7 @@ class App extends Component {
                 <TagUpdaterContext.Provider value={this.toggle_tag}>
                   <FilterTagsContext.Provider value={this.state.tags_curr_map}>
                     <PvgGallery
-                      images={this.state.images}
+                      images={this.get_images()}
                       locating_id={this.state.locating_id}
                     />
                   </FilterTagsContext.Provider>
