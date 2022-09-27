@@ -37,7 +37,7 @@ const noise_levels = [
 export default function UpscalingDialog(props) {
   const classes = useStyles()
 
-  const img = props.img
+  const {img} = props
   const default_noise_level =
     img &&
     (img.fn.substring(img.fn.length - 4) === '.jpg' ||
@@ -45,14 +45,10 @@ export default function UpscalingDialog(props) {
       ? '1'
       : '0'
 
-  let default_old_w, default_old_h
-  if (img) {
-    default_old_w = img.w
-    default_old_h = img.h
-  } else default_old_w = default_old_h = 0
+  const dims = props.dims || [0, 0]
 
   const [file, set_file] = useState()
-  const [old_wh, set_old_wh_0] = useState([default_old_w, default_old_h])
+  const [old_wh, set_old_wh_0] = useState([...dims])
   const [old_w, old_h] = old_wh
 
   let default_ratio = '2.00'
@@ -87,7 +83,7 @@ export default function UpscalingDialog(props) {
         action={host + 'upscale'}
         method="POST"
         target="_blank"
-        encType="multipart/form-data"
+        //encType="multipart/form-data"
       >
         <DialogTitle>Upscaling</DialogTitle>
         <DialogContent>
@@ -95,7 +91,7 @@ export default function UpscalingDialog(props) {
             {img ? (
               <>
                 <Typography>
-                  {`${img.title} - ${img.ind} (${img.fn}, ${img.w} x ${img.h})`}
+                  {`${img.title} - ${img.ind} (${img.fn}, ${dims[0]} x ${dims[1]})`}
                 </Typography>
                 <input
                   name="pid"
@@ -160,7 +156,7 @@ export default function UpscalingDialog(props) {
             <RadioGroup name="noise-level" defaultValue={default_noise_level}>
               <Grid container>
                 {noise_levels.map((opt) => (
-                  <Grid item>
+                  <Grid item key={opt[0]}>
                     <FormControlLabel
                       value={opt[0]}
                       label={opt[1]}

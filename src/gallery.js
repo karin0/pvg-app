@@ -3,10 +3,10 @@ import React, { useContext, useEffect, useMemo, useState } from 'react'
 import {
   Box,
   Chip,
-  Fab,
   Fade,
   FormControlLabel,
   Grid,
+  IconButton,
   ImageList,
   ImageListItem,
   ImageListItemBar,
@@ -24,15 +24,17 @@ import theme from './theme'
 import { host, images_per_page } from './env.js'
 import UpscalingDialog from './UpscalingDialog.js'
 import InfiniteScroll from 'react-infinite-scroll-component'
+import * as ReactDOM from 'react-dom'
 
 const TagUpdaterContext = React.createContext()
 const FilterTagsContext = React.createContext()
 
 const useStylesUB = makeStyles((theme) => ({
   fab: {
-    position: 'absolute',
-    bottom: theme.spacing(2),
-    right: theme.spacing(2),
+    position: 'fixed',
+    top: theme.spacing(2),
+    left: theme.spacing(2),
+    color: 'rgba(255, 255, 255, 0.75)',
   },
 }))
 
@@ -46,15 +48,15 @@ function UpscalingButton(props) {
 
   return (
     <>
-      <Fab color="primary" onClick={open_dialog} className={classes.fab}>
+      <IconButton color="info" onClick={open_dialog} className={classes.fab}>
         <SettingsOverscanIcon />
-      </Fab>
+      </IconButton>
       <UpscalingDialog
         img={props.img}
+        dims={props.dims}
         open={dialog_open}
         on_confirm={props.on_confirm}
         on_close={close_dialog}
-        key={props.img.iid}
       />
     </>
   )
@@ -86,24 +88,53 @@ const useStylesIC = makeStyles((theme) => ({
 function ImageCaption(props) {
   const classes = useStylesIC()
   const [show, set_show] = useState(true)
+  const [real_dims, set_real_dims] = useState(undefined)
 
   const img = props.img
+  // allow img.w and img.h to be predicted
+  const dims = real_dims || [img.w, img.h]
+
   useEffect(() => {
     const a = document.querySelectorAll('img.react-images__view-image')
     for (const e of a) {
-      if (e.src?.includes(img.ori)) {
+      if (e.src.includes(img.ori)) {
         const f = () => set_show(!show)
         e.addEventListener('click', f)
+        if (!real_dims) {
+          const dims = [e.naturalWidth, e.naturalHeight]
+          if (dims[0] && dims[1]) set_real_dims(dims)
+          else {
+            const g = (ev) => {
+              const e = ev.target
+              const dims = [e.naturalWidth, e.naturalHeight]
+              if (dims[0] && dims[1]) {
+                set_real_dims(dims)
+                e.removeEventListener('load', g)
+              }
+            }
+            e.addEventListener('load', g)
+            return () => {
+              e.removeEventListener('click', f)
+              e.removeEventListener('load', g)
+            }
+          }
+        }
         return () => e.removeEventListener('click', f)
       }
     }
-  })
+  }, [img, show])
 
   const update_tags = useContext(TagUpdaterContext)
   const tag_map = useContext(FilterTagsContext)
 
   const illust_url = 'https://www.pixiv.net/artworks/' + img.pid.toString(),
     author_url = 'https://www.pixiv.net/member.php?id=' + img.aid.toString()
+
+  const [btn_box, set_btn_box] = useState(null)
+  useEffect(() => {
+    const e = document.getElementsByClassName('react-images__header')
+    if (e[0]) set_btn_box(e[0])
+  }, [btn_box])
 
   const apos = tag_map.get(img.author)
   return (
@@ -171,7 +202,12 @@ function ImageCaption(props) {
             </Grid>
           </Grid>
         </div>
-        {/*<UpscalingButton img={img} />*/}
+        {show &&
+          btn_box &&
+          ReactDOM.createPortal(
+            <UpscalingButton img={img} dims={dims} />,
+            btn_box
+          )}
       </div>
     </Fade>
   )
