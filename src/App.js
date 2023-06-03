@@ -77,6 +77,9 @@ const styles = (theme) => ({
     background: '#e3f2fd',
     color: '#1976d2',
   },
+  chip_banned: {
+    background: '#e57373',
+  },
   clear_indicator: {
     color: 'white',
   },
@@ -139,6 +142,7 @@ function App(props) {
   const [resp, set_resp] = useState([])
   const [tags_curr, set_tags_curr] = useState([])
   const [tags_curr_map, set_tags_curr_map] = useState(null)
+  const [tags_banned, set_tags_banned] = useState([])
   const [locating_id, set_locating_id] = useState(-1)
   const [drawer_open, set_drawer_open] = useState(false)
   const [safe, set_safe] = useState(!!+localStorage.getItem('safe') || false)
@@ -163,11 +167,19 @@ function App(props) {
     const tags = tags_curr // reliable, for update is used as callback from setState
     const tag_map = new Map()
     for (let i = 0; i < tags.length; ++i) tag_map.set(tags[i], i)
+
+    const filters = []
+    const ban_filters = []
+    for (const tag of tags_curr) {
+      if (tags_banned.includes(tag)) ban_filters.push(tag)
+      else filters.push(tag)
+    }
     fetch(host + 'select', {
       crossDomain: true,
       method: 'POST',
       body: JSON.stringify({
-        filters: tags_curr,
+        filters,
+        ban_filters,
       }),
       headers: new Headers({
         'Content-Type': 'application/json',
@@ -241,6 +253,10 @@ function App(props) {
       const tags = tags_curr.slice(0)
       tags.splice(pos, 1)
       set_tags_curr(tags)
+      const p = tags_banned.indexOf(tag)
+      if (p >= 0) {
+        set_tags_banned(tags_banned.filter((t) => t !== tag))
+      }
     }
     set_locating_id(id)
   }
@@ -261,7 +277,7 @@ function App(props) {
 
   useEffect(() => {
     update()
-  }, [tags_curr, locating_id])
+  }, [tags_curr, tags_banned, locating_id])
 
   const { classes } = props
 
@@ -308,15 +324,31 @@ function App(props) {
                     )
                   }}
                   renderTags={(value, getTagProps) =>
-                    value.map((option, index) => (
-                      <Chip
-                        classes={{ root: classes.chip }}
-                        variant="outlined"
-                        color="primary"
-                        label={option}
-                        {...getTagProps({ index })}
-                      />
-                    ))
+                    value.map((option, index) => {
+                      const banned = tags_banned.includes(option)
+                      return (
+                        <Chip
+                          sx={{ userSelect: 'text', zIndex: 7 }}
+                          classes={{
+                            root: banned ? classes.chip_banned : classes.chip,
+                          }}
+                          variant={banned ? 'filled' : 'outlined'}
+                          color={banned ? 'error' : 'primary'}
+                          label={option}
+                          onClick={() => {
+                            const p = tags_banned.indexOf(option)
+                            const a = tags_banned.slice(0)
+                            if (p >= 0) {
+                              a.splice(p, 1)
+                            } else {
+                              a.push(option)
+                            }
+                            set_tags_banned(a)
+                          }}
+                          {...getTagProps({ index })}
+                        />
+                      )
+                    })
                   }
                   renderInput={(params) => (
                     <TextField fullWidth color="primary" {...params} />
