@@ -1,0 +1,24 @@
+name: Build
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: latest
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+      - run: yarn build
+      - name: Compress
+        run: |
+          FILE=pvg-app-${GITHUB_SHA::7}.tar.xz
+          echo "FILE=$FILE" >> $GITHUB_ENV
+          tar -cJvf $FILE build
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.FILE }}
+          path: ${{ env.FILE }}

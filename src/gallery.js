@@ -122,7 +122,7 @@ function ImageCaption(props) {
         return () => e.removeEventListener('click', f)
       }
     }
-  }, [img, show])
+  }, [img, show, real_dims])
 
   const update_tags = useContext(TagUpdaterContext)
   const tag_map = useContext(FilterTagsContext)

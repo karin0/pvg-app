@@ -162,7 +162,7 @@ function App(props) {
     return get_tag_list(images)
   }, [images])
 
-  const update = () => {
+  function update() {
     // console.log('update with', this.state.tags_curr, this.state.locating_id);
     const tags = tags_curr // reliable, for update is used as callback from setState
     const tag_map = new Map()
@@ -275,9 +275,7 @@ function App(props) {
     set_safe(!safe)
   }
 
-  useEffect(() => {
-    update()
-  }, [tags_curr, tags_banned, locating_id])
+  useEffect(update, [tags_curr, tags_banned, locating_id])
 
   const { classes } = props
 
