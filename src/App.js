@@ -151,7 +151,7 @@ function App(props) {
     const imgs = resp
     if (safe)
       return imgs.filter((img) => {
-        if (img.san !== 2) return false
+        if (img.san !== 1) return false
         for (const tag of img.tags) if (reg_bad.test(tag)) return false
         return true
       })

@@ -29,8 +29,8 @@ import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan'
 import UpscalingDialog from './UpscalingDialog'
 import UpdateIcon from '@mui/icons-material/Update'
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
-import EcoIcon from '@mui/icons-material/HealthAndSafety'
-import DoneIcon from '@mui/icons-material/Done'
+import DoneAllIcon from '@mui/icons-material/DoneAll'
+import ArchiveIcon from '@mui/icons-material/Archive'
 
 function FullUpdateItem(props) {
   const [dialog_open, set_open] = useState(false)
@@ -114,8 +114,8 @@ const action_mapper = (cb) => (x) =>
 const action_listitems = [
   ['Incremental Update', <UpdateIcon />, 'qupd'],
   ['Download All', <CloudDownloadIcon />, 'download'],
-  ['Greendam', <EcoIcon />, 'greendam'],
-  ['QUDG', <DoneIcon />, 'qudg'],
+  ['Archive Orphan Files', <ArchiveIcon />, 'orphan'],
+  ['Do all 3 above', <DoneAllIcon />, 'qudo'],
 ]
 
 function AppDrawer(props) {
@@ -145,21 +145,16 @@ function AppDrawer(props) {
   }
 
   useEffect(() => {
-    fetch(host + 'user', {
+    fetch(host + 'env', {
       crossDomain: true,
       method: 'GET',
     })
       .then((res) => res.json())
       .then((res) => {
-        set_user(res)
+        console.log('env:', res)
+        set_user(res.user)
+        set_ver(res.ver)
       })
-
-    fetch(host + 'ver', {
-      crossDomain: true,
-      method: 'GET',
-    })
-      .then((res) => res.json())
-      .then((res) => set_ver(res.ver))
   }, [])
 
   return (
