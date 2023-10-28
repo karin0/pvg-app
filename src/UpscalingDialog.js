@@ -37,7 +37,7 @@ const noise_levels = [
 export default function UpscalingDialog(props) {
   const classes = useStyles()
 
-  const {img} = props
+  const { img } = props
   const default_noise_level =
     img &&
     (img.fn.substring(img.fn.length - 4) === '.jpg' ||
