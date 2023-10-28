@@ -1,6 +1,6 @@
 {
   "name": "pvg-app",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "homepage": "http://pvg.io/s",
   "dependencies": {
