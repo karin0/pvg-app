@@ -241,14 +241,22 @@ function AppDrawer(props) {
               primary={
                 <>
                   <Link
-                    href="https://github.com/karin0/pvg"
+                    href="https://github.com/karin0/pvg-rs"
                     target="_blank"
                     rel="noreferrer"
                   >
-                    pvg-ng
+                    pvg-rs
                   </Link>
+                  {' ' + ver}
                   <br />
-                  {ver}
+                  <Link
+                    href="https://github.com/karin0/pvg-app"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    pvg-app
+                  </Link>
+                  {' ' + process.env.REACT_APP_GIT_DESCRIBE}
                 </>
               }
             />

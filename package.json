@@ -22,8 +22,8 @@
     "typeface-roboto": "^1.1.13"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "GENERATE_SOURCEMAP=false react-scripts build",
+    "start": "cross-env REACT_APP_GIT_DESCRIBE=$(git describe --tags --always --dirty) react-scripts start",
+    "build": "cross-env REACT_APP_GIT_DESCRIBE=$(git describe --tags --always --dirty) GENERATE_SOURCEMAP=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "fmt": "eslint src --fix && prettier src public *.json --write"
@@ -48,6 +48,7 @@
     ]
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "eslint": "^8.23.1",
     "prettier": "^2.7.1"
   }
