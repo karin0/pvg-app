@@ -19,12 +19,13 @@ import makeStyles from '@mui/styles/makeStyles'
 import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan'
 
 import Carousel, { Modal, ModalGateway } from 'react-images'
+import InfiniteScroll from 'react-infinite-scroll-component'
+import * as ReactDOM from 'react-dom'
 
 import theme from './theme'
 import { host, images_per_page } from './env.js'
 import UpscalingDialog from './UpscalingDialog.js'
-import InfiniteScroll from 'react-infinite-scroll-component'
-import * as ReactDOM from 'react-dom'
+import { useStorage } from './util.js'
 
 const TagUpdaterContext = React.createContext()
 const FilterTagsContext = React.createContext()
@@ -367,10 +368,10 @@ function GallerySwitch(props) {
 }
 
 function PvgGallery(props) {
-  const [resorted, set_resorted] = useState(false)
-  const [reversed, set_reversed] = useState(false)
-  const [expanded, set_expanded] = useState(false)
-  const [show_title, set_show_title] = useState(false)
+  const [resorted, set_resorted] = useStorage('resorted', false)
+  const [reversed, set_reversed] = useStorage('reversed', false)
+  const [expanded, set_expanded] = useStorage('expanded', false)
+  const [show_title, set_show_title] = useStorage('show_title', false)
 
   const illusts = props.images
   const images = useMemo(() => {

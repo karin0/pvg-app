@@ -25,6 +25,7 @@ import MenuIcon from '@mui/icons-material/Menu'
 import ListboxComponent from './Listbox.js'
 import { FilterTagsContext, PvgGallery, TagUpdaterContext } from './gallery.js'
 import { host } from './env.js'
+import { useStorage } from './util.js'
 import theme from './theme.js'
 
 import img_bg from './bg.png'
@@ -134,26 +135,6 @@ function get_tag_list(imgs) {
   return Array.from(s[Symbol.iterator]()).sort((a, b) =>
     compare_fallback(b[1], a[1], () => compare(a[0], b[0]))
   )
-}
-
-function useStorage(key, def, map_initial_value) {
-  const [v, set_v] = useState(() => {
-    const v = localStorage.getItem(key)
-    if (v === null) return typeof def === 'function' ? def() : def
-    let r = JSON.parse(v)
-    if (map_initial_value) {
-      r = map_initial_value(r)
-      localStorage.setItem(key, JSON.stringify(r))
-    }
-    return r
-  })
-  return [
-    v,
-    (n) => {
-      localStorage.setItem(key, JSON.stringify(n))
-      set_v(n)
-    },
-  ]
 }
 
 function App(props) {
