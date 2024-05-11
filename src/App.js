@@ -136,16 +136,35 @@ function get_tag_list(imgs) {
   )
 }
 
+function useStorage(key, def) {
+  const [v, set_v] = useState(() => {
+    const v = localStorage.getItem(key)
+    if (v === null) return def
+    return JSON.parse(v)
+  })
+  return [
+    v,
+    (n) => {
+      localStorage.setItem(key, JSON.stringify(n))
+      set_v(n)
+    },
+  ]
+}
+
 function App(props) {
   const [error, set_error] = useState(null)
   const [loaded, set_loaded] = useState(false)
   const [resp, set_resp] = useState([])
-  const [tags_curr, set_tags_curr] = useState([])
-  const [tags_curr_map, set_tags_curr_map] = useState(null)
-  const [tags_banned, set_tags_banned] = useState([])
+  const [tags_curr, set_tags_curr] = useStorage('tags_curr', [])
+  const [tags_banned, set_tags_banned] = useStorage('tags_banned', [])
   const [locating_id, set_locating_id] = useState(-1)
   const [drawer_open, set_drawer_open] = useState(false)
-  const [safe, set_safe] = useState(!!+localStorage.getItem('safe') || false)
+  const [safe, set_safe] = useState(
+    () => !!+localStorage.getItem('safe') || false
+  )
+
+  const tags_curr_map = new Map()
+  for (let i = 0; i < tags_curr.length; ++i) tags_curr_map.set(tags_curr[i], i)
 
   const images = useMemo(() => {
     const imgs = resp
@@ -164,10 +183,6 @@ function App(props) {
 
   function update() {
     // console.log('update with', this.state.tags_curr, this.state.locating_id);
-    const tags = tags_curr // reliable, for update is used as callback from setState
-    const tag_map = new Map()
-    for (let i = 0; i < tags.length; ++i) tag_map.set(tags[i], i)
-
     const filters = []
     const ban_filters = []
     for (const tag of tags_curr) {
@@ -225,13 +240,11 @@ function App(props) {
           set_loaded(true)
           set_error(null)
           set_resp(resp)
-          set_tags_curr_map(tag_map)
         },
         (error) => {
           set_loaded(true)
           set_error(error)
           set_resp([])
-          set_tags_curr_map(tag_map)
         }
       )
   }
