@@ -136,11 +136,16 @@ function get_tag_list(imgs) {
   )
 }
 
-function useStorage(key, def) {
+function useStorage(key, def, map_initial_value) {
   const [v, set_v] = useState(() => {
     const v = localStorage.getItem(key)
-    if (v === null) return def
-    return JSON.parse(v)
+    if (v === null) return typeof def === 'function' ? def() : def
+    let r = JSON.parse(v)
+    if (map_initial_value) {
+      r = map_initial_value(r)
+      localStorage.setItem(key, JSON.stringify(r))
+    }
+    return r
   })
   return [
     v,
@@ -159,9 +164,10 @@ function App(props) {
   const [tags_banned, set_tags_banned] = useStorage('tags_banned', [])
   const [locating_id, set_locating_id] = useState(-1)
   const [drawer_open, set_drawer_open] = useState(false)
-  const [safe, set_safe] = useState(
-    () => !!+localStorage.getItem('safe') || false
-  )
+  const [safe, set_safe] = useStorage('safe', false, (v) => {
+    if (!v && window.location.search.includes('safe=1')) return true
+    return v
+  })
 
   const tags_curr_map = new Map()
   for (let i = 0; i < tags_curr.length; ++i) tags_curr_map.set(tags_curr[i], i)
@@ -283,7 +289,6 @@ function App(props) {
   }
 
   const toggle_safe = () => {
-    localStorage.setItem('safe', safe ? '0' : '1')
     set_locating_id(-1)
     set_safe(!safe)
   }
