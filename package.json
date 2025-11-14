@@ -4,26 +4,26 @@
   "private": true,
   "homepage": "http://pvg.io/s",
   "dependencies": {
-    "@emotion/react": "^11.10.4",
-    "@emotion/styled": "^11.10.4",
-    "@mui/icons-material": "^5.10.6",
-    "@mui/material": "^5.10.6",
-    "@mui/styles": "^5.10.6",
-    "@testing-library/jest-dom": "^5.11.8",
-    "@testing-library/react": "^11.2.2",
-    "@testing-library/user-event": "^12.6.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-images": "^1.1.0-beta.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^5.18.0",
+    "@mui/material": "^5.18.0",
+    "@mui/styles": "^5.18.0",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^11.2.7",
+    "@testing-library/user-event": "^12.8.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-images": "^1.1.7",
     "react-infinite-scroll-component": "^6.1.0",
     "react-scripts": "^5.0.1",
-    "react-scroll": "^1.7.15",
-    "react-window": "^1.8.5",
+    "react-scroll": "^1.9.3",
+    "react-window": "^1.8.11",
     "typeface-roboto": "^1.1.13"
   },
   "scripts": {
     "start": "cross-env REACT_APP_GIT_DESCRIBE=$(git describe --tags --always --dirty) react-scripts start",
-    "build": "cross-env REACT_APP_GIT_DESCRIBE=$(git describe --tags --always --dirty) GENERATE_SOURCEMAP=false react-scripts build",
+    "build": "cross-env REACT_APP_GIT_DESCRIBE=$(git describe --tags --always --dirty) react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "fmt": "eslint src --fix && prettier src public *.json --write"
@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "eslint": "^8.23.1",
-    "prettier": "^2.7.1"
+    "eslint": "^8.57.1",
+    "prettier": "^2.8.8"
   }
 }
