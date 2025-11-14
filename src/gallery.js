@@ -311,7 +311,6 @@ function GalleryPagination(props) {
   if (views.length === 0 && has_more) {
     set_views([<GalleryView key={0} images={props.pages[0]} />])
   }
-  console.log('loaded', off)
 
   const [now_pages, set_now_pages] = useState([])
   const [now_index, set_now_index] = useState(-1)

@@ -176,6 +176,7 @@ function App(props) {
       if (tags_banned.includes(tag)) ban_filters.push(tag)
       else filters.push(tag)
     }
+    console.debug('update', filters, ban_filters)
     fetch(host + 'select', {
       crossDomain: true,
       method: 'POST',
@@ -190,6 +191,7 @@ function App(props) {
       .then((res) => res.json())
       .then(
         (res) => {
+          console.debug('update response', res?.items?.length)
           const resp = res.items.map((illust) => {
             const [pid, title, aid, author, tags, raw_pages, date, san] = illust
             const pages = raw_pages.map((page, ind) => {
@@ -243,11 +245,14 @@ function App(props) {
       s.add(tag)
       return true
     })
+    console.debug('set_tags', tags, tags_curr)
     set_tags_curr(tags_curr)
+    set_tags_banned(tags_banned.filter((t) => s.has(t)))
     set_locating_id(-1)
   }
 
   const toggle_tag = (tag, id, pos) => {
+    console.debug('toggle_tag', tag, id, pos, tags_curr, tags_banned)
     if (isNaN(pos)) set_tags_curr(tags_curr.concat([tag]))
     else {
       const tags = tags_curr.slice(0)
@@ -255,6 +260,7 @@ function App(props) {
       set_tags_curr(tags)
       const p = tags_banned.indexOf(tag)
       if (p >= 0) {
+        console.debug('removing from banned', p, tag)
         set_tags_banned(tags_banned.filter((t) => t !== tag))
       }
     }
