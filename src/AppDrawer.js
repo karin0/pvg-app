@@ -23,7 +23,7 @@ import { host } from './env'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import SecurityIcon from '@mui/icons-material/Security'
 import SettingsIcon from '@mui/icons-material/Settings'
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useState } from 'react'
 import SyncIcon from '@mui/icons-material/Sync'
 import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan'
 import UpscalingDialog from './UpscalingDialog'
@@ -118,12 +118,16 @@ const action_listitems = [
   ['Do all 3 above', <DoneAllIcon />, 'qudo'],
 ]
 
+const EnvContext = React.createContext()
+
 function AppDrawer(props) {
   const { classes, open, setOpen, onRefresh, safe, toggleSafe } = props
 
   const [settings_open, set_settings_open] = useState(false)
-  const [user, set_user] = useState(null)
-  const [ver, set_ver] = useState('Unknown')
+
+  const env = useContext(EnvContext)
+  const user = env?.user
+  const ver = env?.ver
 
   const close_drawer = () => setOpen(false)
 
@@ -143,19 +147,6 @@ function AppDrawer(props) {
     card_title_2 = null
     card_subtitle = ''
   }
-
-  useEffect(() => {
-    fetch(host + 'env', {
-      crossDomain: true,
-      method: 'GET',
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        console.log('env:', res)
-        set_user(res.user)
-        set_ver(res.ver)
-      })
-  }, [])
 
   return (
     <Drawer
@@ -268,3 +259,4 @@ function AppDrawer(props) {
 }
 
 export default AppDrawer
+export { EnvContext }

@@ -23,7 +23,7 @@ import Autocomplete from '@mui/material/Autocomplete'
 import MenuIcon from '@mui/icons-material/Menu'
 
 import ListboxComponent from './Listbox.js'
-import { FilterTagsContext, PvgGallery, TagUpdaterContext } from './gallery.js'
+import { FilterTagsContext, PvgGallery, TagUpdaterContext, EnvContext } from './gallery.js'
 import { host } from './env.js'
 import { useStorage } from './util.js'
 import theme from './theme.js'
@@ -138,6 +138,7 @@ function get_tag_list(imgs) {
 }
 
 function App(props) {
+  const [env, set_env] = useState(null)
   const [error, set_error] = useState(null)
   const [loaded, set_loaded] = useState(false)
   const [resp, set_resp] = useState([])
@@ -193,7 +194,8 @@ function App(props) {
         (res) => {
           console.debug('update response', res?.items?.length)
           const resp = res.items.map((illust) => {
-            const [pid, title, aid, author, tags, raw_pages, date, san] = illust
+            const [pid, title, aid, author, tags, raw_pages, date, san, ...rest] = illust
+            const meta = rest.length ? rest[rest.length - 1] : undefined
             const pages = raw_pages.map((page, ind) => {
               const [w, h, pre, fn] = page
               const nav = `/${pid}/${ind}`
@@ -213,6 +215,7 @@ function App(props) {
                 thu: pre + nav,
                 date,
                 san,
+                meta,
               }
             })
             return {
@@ -224,6 +227,7 @@ function App(props) {
               pages,
               date,
               san,
+              meta
             }
           })
           set_loaded(true)
@@ -281,6 +285,18 @@ function App(props) {
   }
 
   useEffect(update, [tags_curr, tags_banned, locating_id])
+
+  useEffect(() => {
+    fetch(host + 'env', {
+      crossDomain: true,
+      method: 'GET',
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        console.log('env:', res)
+        set_env(res)
+      })
+  }, [])
 
   const { classes } = props
 
@@ -372,29 +388,31 @@ function App(props) {
             </Toolbar>
           </AppBar>
         </HideOnScroll>
-        <AppDrawer
-          classes={classes}
-          open={drawer_open}
-          setOpen={set_drawer_open}
-          onRefresh={refresh}
-          safe={safe}
-          toggleSafe={toggle_safe}
-        />
-        <Container className={classes.main} maxWidth="lg">
-          {loaded ? (
-            error ? (
-              'Error'
+        <EnvContext.Provider value={env}>
+          <AppDrawer
+            classes={classes}
+            open={drawer_open}
+            setOpen={set_drawer_open}
+            onRefresh={refresh}
+            safe={safe}
+            toggleSafe={toggle_safe}
+          />
+          <Container className={classes.main} maxWidth="lg">
+            {loaded ? (
+              error ? (
+                'Error'
+              ) : (
+                <TagUpdaterContext.Provider value={toggle_tag}>
+                  <FilterTagsContext.Provider value={tags_curr_map}>
+                    <PvgGallery images={images} locating_id={locating_id} />
+                  </FilterTagsContext.Provider>
+                </TagUpdaterContext.Provider>
+              )
             ) : (
-              <TagUpdaterContext.Provider value={toggle_tag}>
-                <FilterTagsContext.Provider value={tags_curr_map}>
-                  <PvgGallery images={images} locating_id={locating_id} />
-                </FilterTagsContext.Provider>
-              </TagUpdaterContext.Provider>
-            )
-          ) : (
-            'Loading..'
-          )}
-        </Container>
+              'Loading..'
+            )}
+          </Container>
+        </EnvContext.Provider>
       </ThemeProvider>
     </StyledEngineProvider>
   )

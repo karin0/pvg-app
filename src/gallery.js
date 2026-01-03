@@ -25,6 +25,7 @@ import * as ReactDOM from 'react-dom'
 import theme from './theme'
 import { host, images_per_page } from './env.js'
 import UpscalingDialog from './UpscalingDialog.js'
+import { EnvContext } from './AppDrawer.js'
 import { useStorage } from './util.js'
 
 const TagUpdaterContext = React.createContext()
@@ -127,9 +128,16 @@ function ImageCaption(props) {
 
   const update_tags = useContext(TagUpdaterContext)
   const tag_map = useContext(FilterTagsContext)
+  const env = useContext(EnvContext)
 
-  const illust_url = 'https://www.pixiv.net/artworks/' + img.pid.toString(),
-    author_url = 'https://www.pixiv.net/member.php?id=' + img.aid.toString()
+  const author_prefix = env?.author_prefix || 'https://www.pixiv.net/users/'
+  const author_url = author_prefix + img.aid.toString()
+
+  let illust_url = img.meta?.url
+  if (!illust_url) {
+    const illust_prefix = env?.illust_prefix || 'https://www.pixiv.net/artworks/'
+    illust_url = illust_prefix + img.pid.toString()
+  }
 
   const [btn_box, set_btn_box] = useState(null)
   useEffect(() => {
@@ -469,4 +477,4 @@ function PvgGallery(props) {
   )
 }
 
-export { PvgGallery, TagUpdaterContext, FilterTagsContext }
+export { PvgGallery, TagUpdaterContext, FilterTagsContext, EnvContext }
