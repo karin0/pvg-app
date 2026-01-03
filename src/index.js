@@ -8,5 +8,5 @@ const root = createRoot(document.getElementById('root'))
 root.render(
   <ThemeProvider theme={theme}>
     <App />,
-  </ThemeProvider>
+  </ThemeProvider>,
 )

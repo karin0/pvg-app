@@ -135,7 +135,8 @@ function ImageCaption(props) {
 
   let illust_url = img.meta?.url
   if (!illust_url) {
-    const illust_prefix = env?.illust_prefix || 'https://www.pixiv.net/artworks/'
+    const illust_prefix =
+      env?.illust_prefix || 'https://www.pixiv.net/artworks/'
     illust_url = illust_prefix + img.pid.toString()
   }
 

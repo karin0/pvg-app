@@ -21,44 +21,43 @@ const OuterElementType = React.forwardRef((props, ref) => {
   return <div ref={ref} {...props} {...outerProps} />
 })
 
-const ListboxComponent = React.forwardRef(function ListboxComponent(
-  props,
-  ref
-) {
-  const { children, ...other } = props
-  const itemData = React.Children.toArray(children)
-  const itemCount = itemData.length
-  const itemSize = 32
+const ListboxComponent = React.forwardRef(
+  function ListboxComponent(props, ref) {
+    const { children, ...other } = props
+    const itemData = React.Children.toArray(children)
+    const itemCount = itemData.length
+    const itemSize = 32
 
-  const getChildSize = (child) => {
-    return itemSize
-  }
+    const getChildSize = (child) => {
+      return itemSize
+    }
 
-  const getHeight = () => {
-    if (itemCount > 20) return 20 * itemSize
-    return itemData.map(getChildSize).reduce((a, b) => a + b, 0)
-  }
+    const getHeight = () => {
+      if (itemCount > 20) return 20 * itemSize
+      return itemData.map(getChildSize).reduce((a, b) => a + b, 0)
+    }
 
-  return (
-    <div ref={ref}>
-      <OuterElementContext.Provider value={other}>
-        <VariableSizeList
-          itemData={itemData}
-          height={getHeight() + 2 * LISTBOX_PADDING}
-          width="100%"
-          key={itemCount}
-          outerElementType={OuterElementType}
-          innerElementType="ul"
-          itemSize={(index) => getChildSize(itemData[index])}
-          overscanCount={20}
-          itemCount={itemCount}
-        >
-          {renderRow}
-        </VariableSizeList>
-      </OuterElementContext.Provider>
-    </div>
-  )
-})
+    return (
+      <div ref={ref}>
+        <OuterElementContext.Provider value={other}>
+          <VariableSizeList
+            itemData={itemData}
+            height={getHeight() + 2 * LISTBOX_PADDING}
+            width="100%"
+            key={itemCount}
+            outerElementType={OuterElementType}
+            innerElementType="ul"
+            itemSize={(index) => getChildSize(itemData[index])}
+            overscanCount={20}
+            itemCount={itemCount}
+          >
+            {renderRow}
+          </VariableSizeList>
+        </OuterElementContext.Provider>
+      </div>
+    )
+  },
+)
 
 ListboxComponent.propTypes = {
   children: PropTypes.node,

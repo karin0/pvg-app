@@ -97,20 +97,19 @@ function UpscalingItem() {
   )
 }
 
-const action_mapper = (cb) => (x) =>
-  (
-    <ListItem
-      button
-      key={x[2]}
-      component="a"
-      href={host + 'action/' + x[2]}
-      target="_blank"
-      onClick={cb}
-    >
-      <ListItemIcon>{x[1]}</ListItemIcon>
-      <ListItemText primary={x[0]} />
-    </ListItem>
-  )
+const action_mapper = (cb) => (x) => (
+  <ListItem
+    button
+    key={x[2]}
+    component="a"
+    href={host + 'action/' + x[2]}
+    target="_blank"
+    onClick={cb}
+  >
+    <ListItemIcon>{x[1]}</ListItemIcon>
+    <ListItemText primary={x[0]} />
+  </ListItem>
+)
 const action_listitems = [
   ['Incremental Update', <UpdateIcon />, 'qupd'],
   ['Download All', <CloudDownloadIcon />, 'download'],

@@ -15,7 +15,7 @@ if (!host) {
 const images_per_page = 50
 const upscale_target = Math.max(
   window.screen.width * window.devicePixelRatio,
-  window.screen.height * window.devicePixelRatio
+  window.screen.height * window.devicePixelRatio,
 )
 
 export { host, images_per_page, upscale_target }

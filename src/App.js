@@ -23,7 +23,12 @@ import Autocomplete from '@mui/material/Autocomplete'
 import MenuIcon from '@mui/icons-material/Menu'
 
 import ListboxComponent from './Listbox.js'
-import { FilterTagsContext, PvgGallery, TagUpdaterContext, EnvContext } from './gallery.js'
+import {
+  FilterTagsContext,
+  PvgGallery,
+  TagUpdaterContext,
+  EnvContext,
+} from './gallery.js'
 import { host } from './env.js'
 import { useStorage } from './util.js'
 import theme from './theme.js'
@@ -194,7 +199,17 @@ function App(props) {
         (res) => {
           console.debug('update response', res?.items?.length)
           const resp = res.items.map((illust) => {
-            const [pid, title, aid, author, tags, raw_pages, date, san, ...rest] = illust
+            const [
+              pid,
+              title,
+              aid,
+              author,
+              tags,
+              raw_pages,
+              date,
+              san,
+              ...rest
+            ] = illust
             const meta = rest.length ? rest[rest.length - 1] : undefined
             const pages = raw_pages.map((page, ind) => {
               const [w, h, pre, fn] = page
@@ -227,7 +242,7 @@ function App(props) {
               pages,
               date,
               san,
-              meta
+              meta,
             }
           })
           set_loaded(true)
