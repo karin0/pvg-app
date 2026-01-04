@@ -237,6 +237,7 @@ function CarouselModal(props) {
             views={images.map((img) => ({
               source: host + img.ori,
               caption: <ImageCaption img={img} close_modal={onClose} />,
+              alt: img.title,
             }))}
           />
         </Modal>
