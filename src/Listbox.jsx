@@ -1,66 +1,43 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { VariableSizeList } from 'react-window'
+import { List } from 'react-window'
 
+// .MuiAutocomplete-listbox pads the scroller by 8px vertically; account for
+// it when sizing the visible box (rows start below the padding natively)
 const LISTBOX_PADDING = 8 // px
 
-function renderRow(props) {
-  const { data, index, style } = props
-  return React.cloneElement(data[index], {
-    style: {
-      ...style,
-      top: style.top + LISTBOX_PADDING,
-    },
-  })
+const ITEM_SIZE = 32 // px
+
+function Row({ index, style, items }) {
+  return React.cloneElement(items[index], { style })
 }
-
-const OuterElementContext = React.createContext({})
-
-const OuterElementType = React.forwardRef((props, ref) => {
-  const { onScroll, ...outerProps } = React.useContext(OuterElementContext)
-  return (
-    <div
-      ref={ref}
-      {...props}
-      {...outerProps}
-      // MUI's listbox props include their own onScroll (touch-scroll
-      // bookkeeping), which must not clobber react-window's: that one drives
-      // the virtualized render window.
-      onScroll={(event) => {
-        props.onScroll?.(event)
-        onScroll?.(event)
-      }}
-    />
-  )
-})
 
 const ListboxComponent = React.forwardRef(
   function ListboxComponent(props, ref) {
     const { children, ...other } = props
     const itemData = React.Children.toArray(children)
     const itemCount = itemData.length
-    const itemSize = 32
-
-    const getHeight = () => Math.min(itemCount, 20) * itemSize
 
     return (
-      <div ref={ref}>
-        <OuterElementContext.Provider value={other}>
-          <VariableSizeList
-            itemData={itemData}
-            height={getHeight() + 2 * LISTBOX_PADDING}
-            width="100%"
-            key={itemCount}
-            outerElementType={OuterElementType}
-            innerElementType="ul"
-            itemSize={() => itemSize}
-            overscanCount={20}
-            itemCount={itemCount}
-          >
-            {renderRow}
-          </VariableSizeList>
-        </OuterElementContext.Provider>
-      </div>
+      <List
+        {...other}
+        tagName="ul"
+        rowComponent={Row}
+        rowCount={itemCount}
+        rowHeight={ITEM_SIZE}
+        rowProps={{ items: itemData }}
+        overscanCount={20}
+        style={{
+          height: Math.min(itemCount, 20) * ITEM_SIZE + 2 * LISTBOX_PADDING,
+          maxHeight: '40vh',
+        }}
+        // bridge the scroll element to MUI's forked listbox ref
+        listRef={(api) => {
+          const node = api?.element ?? null
+          if (typeof ref === 'function') ref(node)
+          else if (ref) ref.current = node
+        }}
+      />
     )
   },
 )
