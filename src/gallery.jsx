@@ -6,8 +6,6 @@ import {
   Fade,
   FormControlLabel,
   IconButton,
-  ImageList,
-  ImageListItem,
   ImageListItemBar,
   Link,
   Switch,
@@ -231,66 +229,98 @@ const ModalCallbacksContext = React.createContext(undefined)
 
 function GalleryView(props) {
   const md = useMediaQuery(theme.breakpoints.up('md'))
+  const cols = md ? 3 : 2
+  const gap = md ? 4 : 2
 
   const show_title = useContext(ShowTitleContext)
   const show_images = useContext(ModalCallbacksContext)
 
   const { images } = props
 
+  // Greedy shortest-column placement keeps vertical position in array order,
+  // unlike CSS-columns masonry. Unknown dimensions count as square. Useful
+  // for results ranked by score.
+  const columns = useMemo(() => {
+    const columns = Array.from({ length: cols }, () => [])
+    const heights = new Array(cols).fill(0)
+    images.forEach((img, i) => {
+      const k = heights.indexOf(Math.min(...heights))
+      columns[k].push(i)
+      heights[k] += img.w && img.h ? img.h / img.w : 1
+    })
+    return columns
+  }, [images, cols])
+
   return (
-    <ImageList variant="masonry" cols={md ? 3 : 2} gap={md ? 4 : 2}>
-      {images.map((img, i) => {
-        const { pages } = img
-        const multi_pages = pages && pages.length > 1
-        return (
-          <ImageListItem key={img.ori}>
-            <img
-              src={host + img.ori}
-              loading="lazy"
-              onClick={
-                multi_pages
-                  ? () => show_images(img.pages, 0)
-                  : () => show_images(images, i)
-              }
-              alt={img.title}
-              width={img.w}
-              height={img.h}
-            />
-            {show_title ? (
-              <ImageListItemBar
-                title={img.title}
-                subtitle={img.author}
-                actionIcon={
+    <Box sx={{ display: 'flex', gap: `${gap}px` }}>
+      {columns.map((column, k) => (
+        <Box
+          key={k}
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: `${gap}px`,
+            alignSelf: 'flex-start',
+          }}
+        >
+          {column.map((i) => {
+            const img = images[i]
+            const { pages } = img
+            const multi_pages = pages && pages.length > 1
+            return (
+              <Box key={img.ori} sx={{ position: 'relative' }}>
+                <img
+                  src={host + img.ori}
+                  loading="lazy"
+                  onClick={
+                    multi_pages
+                      ? () => show_images(img.pages, 0)
+                      : () => show_images(images, i)
+                  }
+                  alt={img.title}
+                  width={img.w}
+                  height={img.h}
+                  style={{ display: 'block', width: '100%', height: 'auto' }}
+                />
+                {show_title ? (
+                  <ImageListItemBar
+                    title={img.title}
+                    subtitle={img.author}
+                    actionIcon={
+                      multi_pages && (
+                        <Chip
+                          label={pages.length}
+                          color="info"
+                          style={{ marginRight: 8 }}
+                          size="small"
+                        />
+                      )
+                    }
+                  />
+                ) : (
                   multi_pages && (
-                    <Chip
-                      label={pages.length}
-                      color="info"
-                      style={{ marginRight: 8 }}
-                      size="small"
+                    <ImageListItemBar
+                      actionIcon={
+                        <Chip
+                          label={pages.length}
+                          color="info"
+                          style={{
+                            margin: '6px 8px 6px 0',
+                          }}
+                          size="small"
+                        />
+                      }
                     />
                   )
-                }
-              />
-            ) : (
-              multi_pages && (
-                <ImageListItemBar
-                  actionIcon={
-                    <Chip
-                      label={pages.length}
-                      color="info"
-                      style={{
-                        margin: '6px 8px 6px 0',
-                      }}
-                      size="small"
-                    />
-                  }
-                />
-              )
-            )}
-          </ImageListItem>
-        )
-      })}
-    </ImageList>
+                )}
+              </Box>
+            )
+          })}
+        </Box>
+      ))}
+    </Box>
   )
 }
 
@@ -315,6 +345,7 @@ function GalleryPagination(props) {
     <>
       <ModalCallbacksContext.Provider value={show_images}>
         <InfiniteScroll
+          style={{ display: 'flex', flexDirection: 'column', rowGap: 16 }}
           dataLength={off}
           next={() => {
             set_views([
@@ -411,7 +442,7 @@ function PvgGallery(props) {
   }
 
   return (
-    <Box sx={{ pt: 8, mb: -2.5 }}>
+    <Box sx={{ pt: 8 }}>
       <Box sx={{ width: '100%', display: 'flow-root', px: 2 }}>
         <Typography
           sx={{ display: 'inline' }}
@@ -441,7 +472,7 @@ function PvgGallery(props) {
           setChecked={set_resorted}
         />
       </Box>
-      <Box sx={{ mt: -1 }}>
+      <Box sx={{ mt: 1 }}>
         <ShowTitleContext.Provider value={show_title}>
           <GalleryPagination
             pages={pages}
