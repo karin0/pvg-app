@@ -17,8 +17,21 @@ function renderRow(props) {
 const OuterElementContext = React.createContext({})
 
 const OuterElementType = React.forwardRef((props, ref) => {
-  const outerProps = React.useContext(OuterElementContext)
-  return <div ref={ref} {...props} {...outerProps} />
+  const { onScroll, ...outerProps } = React.useContext(OuterElementContext)
+  return (
+    <div
+      ref={ref}
+      {...props}
+      {...outerProps}
+      // MUI's listbox props include their own onScroll (touch-scroll
+      // bookkeeping), which must not clobber react-window's: that one drives
+      // the virtualized render window.
+      onScroll={(event) => {
+        props.onScroll?.(event)
+        onScroll?.(event)
+      }}
+    />
+  )
 })
 
 const ListboxComponent = React.forwardRef(

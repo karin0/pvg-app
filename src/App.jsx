@@ -287,11 +287,12 @@ function App() {
                   clearOnBlur
                   handleHomeEndKeys
                   options={tags}
-                  ListboxComponent={ListboxComponent}
+                  slotProps={{ listbox: { component: ListboxComponent } }}
                   getOptionLabel={(o) => o[0]}
                   renderOption={(props, tag) => {
+                    // row box comes from Listbox's react-window itemSize
                     return (
-                      <li {...props} style={{ height: 10 }}>
+                      <li {...props}>
                         {tag[0]}
                         <Chip
                           label={tag[1]}
@@ -303,7 +304,7 @@ function App() {
                       </li>
                     )
                   }}
-                  renderTags={(value, getTagProps) =>
+                  renderValue={(value, getItemProps) =>
                     value.map((option, index) => {
                       const banned = tags_banned.includes(option)
                       return (
@@ -328,7 +329,7 @@ function App() {
                             }
                             set_tags_banned(a)
                           }}
-                          {...getTagProps({ index })}
+                          {...getItemProps({ index })}
                         />
                       )
                     })

@@ -15,6 +15,14 @@ const theme = createTheme({
       main: 'rgb(255, 64, 96)',
     },
   },
+  components: {
+    MuiListItemIcon: {
+      styleOverrides: {
+        // MUI 9 shrank the default to spacing(4.5); keep the classic 56px gap
+        root: { minWidth: 56 },
+      },
+    },
+  },
 })
 
 export default theme
