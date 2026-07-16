@@ -28,14 +28,7 @@ const ListboxComponent = React.forwardRef(
     const itemCount = itemData.length
     const itemSize = 32
 
-    const getChildSize = (child) => {
-      return itemSize
-    }
-
-    const getHeight = () => {
-      if (itemCount > 20) return 20 * itemSize
-      return itemData.map(getChildSize).reduce((a, b) => a + b, 0)
-    }
+    const getHeight = () => Math.min(itemCount, 20) * itemSize
 
     return (
       <div ref={ref}>
@@ -47,7 +40,7 @@ const ListboxComponent = React.forwardRef(
             key={itemCount}
             outerElementType={OuterElementType}
             innerElementType="ul"
-            itemSize={(index) => getChildSize(itemData[index])}
+            itemSize={() => itemSize}
             overscanCount={20}
             itemCount={itemCount}
           >

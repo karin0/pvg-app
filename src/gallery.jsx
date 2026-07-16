@@ -5,7 +5,6 @@ import {
   Chip,
   Fade,
   FormControlLabel,
-  Grid,
   IconButton,
   ImageList,
   ImageListItem,
@@ -15,7 +14,7 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material'
-import makeStyles from '@mui/styles/makeStyles'
+
 import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan'
 
 import Carousel, { Modal, ModalGateway } from 'react-images'
@@ -23,22 +22,13 @@ import InfiniteScroll from 'react-infinite-scroll-component'
 import * as ReactDOM from 'react-dom'
 
 import theme from './theme'
-import { host, images_per_page } from './env.js'
-import UpscalingDialog from './UpscalingDialog.js'
-import { EnvContext } from './AppDrawer.js'
-import { useStorage } from './util.js'
+import { host, images_per_page } from './env'
+import UpscalingDialog from './UpscalingDialog'
+import { EnvContext } from './AppDrawer'
+import { useStorage } from './util'
 
 const TagUpdaterContext = React.createContext()
 const FilterTagsContext = React.createContext()
-
-const useStylesUB = makeStyles((theme) => ({
-  fab: {
-    position: 'fixed',
-    top: theme.spacing(2),
-    left: theme.spacing(2),
-    color: 'rgba(255, 255, 255, 0.75)',
-  },
-}))
 
 function UpscalingButton(props) {
   const [dialog_open, set_open] = useState(false)
@@ -46,11 +36,18 @@ function UpscalingButton(props) {
   const open_dialog = () => set_open(true)
   const close_dialog = () => set_open(false)
 
-  const classes = useStylesUB()
-
   return (
     <>
-      <IconButton color="info" onClick={open_dialog} className={classes.fab}>
+      <IconButton
+        color="info"
+        onClick={open_dialog}
+        sx={{
+          position: 'fixed',
+          top: 16,
+          left: 16,
+          color: 'rgba(255, 255, 255, 0.75)',
+        }}
+      >
         <SettingsOverscanIcon />
       </IconButton>
       <UpscalingDialog
@@ -73,22 +70,7 @@ function CaptionLink(props) {
     </Typography>
   )
 }
-
-const useStylesIC = makeStyles((theme) => ({
-  chip: {
-    marginRight: '0.5em',
-    marginBottom: '0.3em',
-  },
-  caption: {
-    position: 'absolute',
-    left: theme.spacing(2),
-    bottom: theme.spacing(2),
-    marginBottom: -12,
-  },
-}))
-
 function ImageCaption(props) {
-  const classes = useStylesIC()
   const [show, set_show] = useState(true)
   const [real_dims, set_real_dims] = useState(undefined)
 
@@ -150,28 +132,40 @@ function ImageCaption(props) {
   return (
     <Fade in={show}>
       <div>
-        <div className={classes.caption}>
-          <Grid container>
-            <Grid item>
-              <Box pr={1}>
-                <CaptionLink url={illust_url} text={img.title + ' - '} />
-              </Box>
-            </Grid>
-            <Grid item>
-              <CaptionLink url={author_url} text={img.author} />
-            </Grid>
-            <Grid item>
-              <Chip
-                label={img.san}
-                size="small"
-                color="error"
-                style={{ marginLeft: 10 }}
-              />
-            </Grid>
-          </Grid>
-          <Box mt={0.5} mb={-1}>
+        <div
+          style={{
+            position: 'absolute',
+            left: '16px',
+            bottom: '16px',
+            marginBottom: '-12px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              marginBottom: '4px',
+            }}
+          >
+            <span style={{ paddingRight: '8px' }}>
+              <CaptionLink url={illust_url} text={img.title + ' - '} />
+            </span>
+            <CaptionLink url={author_url} text={img.author} />
             <Chip
-              classes={{ root: classes.chip }}
+              label={img.san}
+              size="small"
+              color="error"
+              style={{
+                marginLeft: '10px',
+                marginRight: '0.5em',
+                marginBottom: '0.3em',
+              }}
+            />
+          </div>
+          <div style={{ marginTop: '4px', marginBottom: '-8px' }}>
+            <Chip
+              style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
               color={isNaN(apos) ? 'secondary' : 'primary'}
               label={img.author}
               onClick={() => {
@@ -184,7 +178,7 @@ function ImageCaption(props) {
               return (
                 <Chip
                   key={tag}
-                  classes={{ root: classes.chip }}
+                  style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
                   color={isNaN(pos) ? 'info' : 'primary'}
                   label={tag}
                   onClick={() => {
@@ -194,29 +188,27 @@ function ImageCaption(props) {
                 />
               )
             })}
-          </Box>
-          <Grid container style={{ marginTop: 12 }}>
-            <Grid item>
-              <Chip
-                classes={{ root: classes.chip }}
-                label={img.pid}
-                color="info"
-                size="small"
-              />
-              <Chip
-                classes={{ root: classes.chip }}
-                label={img.date}
-                color="info"
-                size="small"
-              />
-            </Grid>
-          </Grid>
+          </div>
+          <div style={{ marginTop: '12px' }}>
+            <Chip
+              style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
+              label={img.pid}
+              color="info"
+              size="small"
+            />
+            <Chip
+              style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
+              label={img.date}
+              color="info"
+              size="small"
+            />
+          </div>
         </div>
         {show &&
           btn_box &&
           ReactDOM.createPortal(
             <UpscalingButton img={img} dims={dims} />,
-            btn_box
+            btn_box,
           )}
       </div>
     </Fade>
@@ -385,23 +377,16 @@ function PvgGallery(props) {
   const illusts = props.images
   const images = useMemo(() => {
     let imgs = illusts
-    let sliced = false
-    function as_slice() {
-      if (!sliced) {
-        sliced = true
-        imgs = imgs.slice(0)
-      }
-      return imgs
+    if (resorted || reversed) {
+      imgs = imgs.slice(0)
+      if (resorted) imgs.sort((a, b) => b.pid - a.pid)
+      if (reversed) imgs.reverse()
     }
-    if (resorted) imgs = as_slice().sort((a, b) => b.pid - a.pid)
-    if (reversed) imgs = as_slice().reverse()
-    if (expanded) imgs = imgs.flatMap((o) => o.pages)
-    else
-      imgs = imgs.map((o) => ({
-        ...o.pages[0],
-        pages: o.pages,
-      }))
-    return imgs
+    if (expanded) return imgs.flatMap((o) => o.pages)
+    return imgs.map((o) => ({
+      ...o.pages[0],
+      pages: o.pages,
+    }))
   }, [illusts, resorted, reversed, expanded])
 
   const real_page_num = useMemo(() => {
@@ -437,44 +422,45 @@ function PvgGallery(props) {
   }
 
   return (
-    <Box pt={8} mb={-2.5}>
-      <Grid container>
-        <Grid item style={{ width: '100%' }} px={2}>
-          <Typography display="inline" color="textSecondary" variant="body2">
-            {real_page_num} pages from {illusts.length} illusts by {sa.size}{' '}
-            users
-          </Typography>
-          <GallerySwitch
-            label="Show Titles"
-            checked={show_title}
-            setChecked={set_show_title}
+    <Box sx={{ pt: 8, mb: -2.5 }}>
+      <Box sx={{ width: '100%', display: 'flow-root', px: 2 }}>
+        <Typography
+          sx={{ display: 'inline' }}
+          color="textSecondary"
+          variant="body2"
+        >
+          {real_page_num} pages from {illusts.length} illusts by {sa.size} users
+        </Typography>
+        <GallerySwitch
+          label="Show Titles"
+          checked={show_title}
+          setChecked={set_show_title}
+        />
+        <GallerySwitch
+          label="Expanded"
+          checked={expanded}
+          setChecked={set_expanded}
+        />
+        <GallerySwitch
+          label="Reversed"
+          checked={reversed}
+          setChecked={set_reversed}
+        />
+        <GallerySwitch
+          label="Sort by Date"
+          checked={resorted}
+          setChecked={set_resorted}
+        />
+      </Box>
+      <Box sx={{ mt: -1 }}>
+        <ShowTitleContext.Provider value={show_title}>
+          <GalleryPagination
+            pages={pages}
+            default_offset={offset}
+            key={[ha, hs]}
           />
-          <GallerySwitch
-            label="Expanded"
-            checked={expanded}
-            setChecked={set_expanded}
-          />
-          <GallerySwitch
-            label="Reversed"
-            checked={reversed}
-            setChecked={set_reversed}
-          />
-          <GallerySwitch
-            label="Sort by Date"
-            checked={resorted}
-            setChecked={set_resorted}
-          />
-        </Grid>
-        <Grid item mt={-1}>
-          <ShowTitleContext.Provider value={show_title}>
-            <GalleryPagination
-              pages={pages}
-              default_offset={offset}
-              key={[ha, hs]}
-            />
-          </ShowTitleContext.Provider>
-        </Grid>
-      </Grid>
+        </ShowTitleContext.Provider>
+      </Box>
     </Box>
   )
 }

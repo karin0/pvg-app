@@ -1,9 +1,8 @@
 let host = localStorage.getItem('dev_host')
 if (!host) {
-  host = process.env['REACT_APP_API_HOST']
+  host = import.meta.env.VITE_API_HOST
   if (!host) {
-    const port =
-      process.env['NODE_ENV'] === 'development' ? 5678 : window.location.port
+    const port = import.meta.env.DEV ? 5678 : window.location.port
     host =
       window.location.protocol +
       '//' +

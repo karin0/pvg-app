@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import makeStyles from '@mui/styles/makeStyles'
+import { useState } from 'react'
+
 import {
   Box,
   Button,
@@ -10,21 +10,13 @@ import {
   FormControl,
   FormControlLabel,
   FormLabel,
-  Grid,
   Radio,
   RadioGroup,
+  Stack,
   TextField,
   Typography,
 } from '@mui/material'
-import { host, upscale_target } from './env.js'
-
-const useStyles = makeStyles((theme) => ({
-  btn: {
-    bottom: '6px',
-    position: 'relative',
-    marginBottom: '-8px',
-  },
-}))
+import { host, upscale_target } from './env'
 
 const noise_levels = [
   ['0', 'None'],
@@ -35,8 +27,6 @@ const noise_levels = [
 ]
 
 export default function UpscalingDialog(props) {
-  const classes = useStyles()
-
   const { img } = props
   const default_noise_level =
     img &&
@@ -87,7 +77,7 @@ export default function UpscalingDialog(props) {
       >
         <DialogTitle>Upscaling</DialogTitle>
         <DialogContent>
-          <Box mb={2}>
+          <Box sx={{ mb: 2 }}>
             {img ? (
               <>
                 <Typography>
@@ -107,9 +97,16 @@ export default function UpscalingDialog(props) {
                 />
               </>
             ) : (
-              <Grid container spacing={2}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 2,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
                 {file ? (
-                  <Grid item>
+                  <Box>
                     <Typography
                       align="center"
                       style={{
@@ -120,9 +117,9 @@ export default function UpscalingDialog(props) {
                     >
                       {`${file.name} (${old_w} x ${old_h})`}
                     </Typography>
-                  </Grid>
+                  </Box>
                 ) : null}
-                <Grid item className={classes.btn}>
+                <Box>
                   <Button variant="contained" component="label">
                     Upload
                     <input
@@ -145,8 +142,8 @@ export default function UpscalingDialog(props) {
                       }}
                     />
                   </Button>
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
             )}
           </Box>
           <FormControl component="fieldset" variant="outlined">
@@ -154,20 +151,19 @@ export default function UpscalingDialog(props) {
               Noise Reduction
             </FormLabel>
             <RadioGroup name="noise-level" defaultValue={default_noise_level}>
-              <Grid container>
+              <Stack direction="row" spacing={1} flexWrap="wrap">
                 {noise_levels.map((opt) => (
-                  <Grid item key={opt[0]}>
-                    <FormControlLabel
-                      value={opt[0]}
-                      label={opt[1]}
-                      control={<Radio />}
-                    />
-                  </Grid>
+                  <FormControlLabel
+                    key={opt[0]}
+                    value={opt[0]}
+                    label={opt[1]}
+                    control={<Radio />}
+                  />
                 ))}
-              </Grid>
+              </Stack>
             </RadioGroup>
           </FormControl>
-          <Box mt={1}>
+          <Box sx={{ mt: 1 }}>
             <TextField
               name="ratio"
               margin="dense"
@@ -181,27 +177,23 @@ export default function UpscalingDialog(props) {
               fullWidth
             />
           </Box>
-          <Box mt={1}>
-            <Grid container justifyContent="space-between">
-              <Grid item>
-                <TextField
-                  margin="dense"
-                  label="Target Width"
-                  value={old_w ? Math.round(old_w * ratio) : 'N/A'}
-                  disabled
-                  fullWidth
-                />
-              </Grid>
-              <Grid item>
-                <TextField
-                  margin="dense"
-                  label="Target Height"
-                  value={old_h ? Math.round(old_h * ratio) : 'N/A'}
-                  disabled
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
+          <Box sx={{ mt: 1 }}>
+            <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
+              <TextField
+                margin="dense"
+                label="Target Width"
+                value={old_w ? Math.round(old_w * ratio) : 'N/A'}
+                disabled
+                fullWidth
+              />
+              <TextField
+                margin="dense"
+                label="Target Height"
+                value={old_h ? Math.round(old_h * ratio) : 'N/A'}
+                disabled
+                fullWidth
+              />
+            </Stack>
           </Box>
         </DialogContent>
         <DialogActions>

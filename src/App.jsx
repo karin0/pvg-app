@@ -1,10 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './index.css'
 
-import 'typeface-roboto'
+import '@fontsource/roboto/300.css'
+import '@fontsource/roboto/400.css'
+import '@fontsource/roboto/500.css'
+import '@fontsource/roboto/700.css'
 
 import {
   AppBar,
+  Box,
   Chip,
   Container,
   CssBaseline,
@@ -16,24 +20,22 @@ import {
 } from '@mui/material'
 
 import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles'
-import withStyles from '@mui/styles/withStyles'
 // import { darkWhite, lightWhite } from '@mui/material/colors';
 import Autocomplete from '@mui/material/Autocomplete'
 
 import MenuIcon from '@mui/icons-material/Menu'
 
-import ListboxComponent from './Listbox.js'
+import ListboxComponent from './Listbox'
 import {
   FilterTagsContext,
   PvgGallery,
   TagUpdaterContext,
   EnvContext,
-} from './gallery.js'
-import { host } from './env.js'
-import { useStorage } from './util.js'
-import theme from './theme.js'
+} from './gallery'
+import { host } from './env'
+import { useStorage } from './util'
+import theme from './theme'
 
-import img_bg from './bg.png'
 import AppDrawer from './AppDrawer'
 
 function compare(a, b) {
@@ -59,66 +61,12 @@ function HideOnScroll(props) {
   )
 }
 
-const styles = (theme) => ({
-  list: {
-    width: 270,
-    backgroundColor: theme.palette.background.paper,
-  },
-
-  menu_button: {
-    marginRight: theme.spacing(2),
-  },
-  main: {
-    paddingLeft: 0,
-    paddingRight: 0,
-    paddingBottom: theme.spacing(4),
-  },
-  box: {
-    width: '100%',
-    '& > * + *': {
-      marginTop: theme.spacing(3),
-    },
-  },
-  chip: {
-    background: '#e3f2fd',
-    color: '#1976d2',
-  },
-  chip_banned: {
-    background: '#e57373',
-  },
-  clear_indicator: {
-    color: 'white',
-  },
-  input: {
-    color: 'white',
-  },
-  input_root: {
-    borderColor: 'white',
-  },
-  avatar: {
-    width: theme.spacing(9),
-    height: theme.spacing(9),
-    boxShadow:
-      'rgba(0, 0, 0, 0.2) 0px 3px 3px -2px, rgba(0, 0, 0, 0.14) 0px 3px 4px 0px, rgba(0, 0, 0, 0.12) 0px 1px 8px 0px',
-  },
-  card: {
-    // background: 'linear-gradient(90deg, rgba(53,95,146,1) 11%, rgba(41,148,234,1) 83%)',
-    backgroundImage: `url(${img_bg})`,
-    backgroundSize: 'cover',
-    borderRadius: '0px',
-  },
-  card_text: {
-    color: 'white',
-    fontSize: '110%',
-  },
-})
-
 const reg_bad = new RegExp(
   decodeURIComponent(
     atob(
-      'Ui0xJTdDJUU4JUFBJTk4JUUzJTgxJUEzJUUzJTgxJUE2JTdDJUUzJTgzJTkxJUUzJTgzJUIzJUUzJTgzJTg0JTdDJUU4JUJDJUFBJUUzJTgzJTgxJUUzJTgzJUE5JTdDJUU1JUI3JUE4JUU0JUI5JUIzJTdDJUUzJTgxJUEzJUUzJTgxJUIxJUUzJTgxJTg0JTdDJUU0JUJBJThCJUU1JUJFJThDJTdDJUU0JUJBJThCJUU1JTg5JThEJTdDJUU5JUFEJTg1JUU2JTgzJTkxJTdDJUU4JUIwJUI3JUU5JTk2JTkzJTdDJUU2JUE1JUI1JUU0JUI4JThBJUUzJTgxJUFFJUU0JUI5JUIzJTdDJUU5JTlDJUIyJUU1JTg3JUJBJTdDJUU1JUIwJUJCJUU3JUE1JTlFJTdDJUUzJTgyJUFBJUUzJTgzJThBJUUzJTgzJThCJTdDJUU1JThEJThBJUU4JUEzJUI4JTdDJUUzJTgyJUI3JUUzJTgzJUJDJUUzJTgzJTg0JTdDJUU1JUE0JUFBJUUzJTgyJTgyJUUzJTgyJTgyJTdDJUU4JUEzJUI4JUU4JUI2JUIzJTdDJUU0JUI4JThCJUU3JTlEJTgwJTdDJUUzJTgxJTlGJUUzJTgxJThGJUUzJTgxJTk3JUUzJTgxJTgyJUUzJTgxJTkyJTdDJUUzJTgxJTk5JUUzJTgxJTk4JTdDJUUzJTgxJUI3JUUzJTgxJUFCJUUzJTgxJUJFJUUzJTgyJTkzJTdDJUUzJTgxJUIxJUUzJTgyJTkzJUUzJTgxJUE0JTdDJUUzJTgxJThBJUUzJTgxJUI4JUUzJTgxJTlEJTdDJUU0JUI4JUFEJUU1JTg3JUJBJUUzJTgxJTk3JTdDJUUzJTgxJTlGJUUzJTgxJThGJUUzJTgxJTk3JUU0JUI4JThBJUUzJTgxJTkyJTdDJUU2JThBJUIxJUUzJTgxJThEJUU2JTlFJTk1JTdDJUU3JUI3JThBJUU3JUI4JTlCJTdDJUU2JThCJTk4JUU2JTlEJTlG'
-    )
-  )
+      'Ui0xJTdDJUU4JUFBJTk4JUUzJTgxJUEzJUUzJTgxJUE2JTdDJUUzJTgzJTkxJUUzJTgzJUIzJUUzJTgzJTg0JTdDJUU4JUJDJUFBJUUzJTgzJTgxJUUzJTgzJUE5JTdDJUU1JUI3JUE4JUU0JUI5JUIzJTdDJUUzJTgxJUEzJUUzJTgxJUIxJUUzJTgxJTg0JTdDJUU0JUJBJThCJUU1JUJFJThDJTdDJUU0JUJBJThCJUU1JTg5JThEJTdDJUU5JUFEJTg1JUU2JTgzJTkxJTdDJUU4JUIwJUI3JUU5JTk2JTkzJTdDJUU2JUE1JUI1JUU0JUI4JThBJUUzJTgxJUFFJUU0JUI5JUIzJTdDJUU5JTlDJUIyJUU1JTg3JUJBJTdDJUU1JUIwJUJCJUU3JUE1JTlFJTdDJUUzJTgyJUFBJUUzJTgzJThBJUUzJTgzJThCJTdDJUU1JThEJThBJUU4JUEzJUI4JTdDJUUzJTgyJUI3JUUzJTgzJUJDJUUzJTgzJTg0JTdDJUU1JUE0JUFBJUUzJTgyJTgyJUUzJTgyJTgyJTdDJUU4JUEzJUI4JUU4JUI2JUIzJTdDJUU0JUI4JThCJUU3JTlEJTgwJTdDJUUzJTgxJTlGJUUzJTgxJThGJUUzJTgxJTk3JUUzJTgxJTgyJUUzJTgxJTkyJTdDJUUzJTgxJTk5JUUzJTgxJTk4JTdDJUUzJTgxJUI3JUUzJTgxJUFCJUUzJTgxJUJFJUUzJTgyJTkzJTdDJUUzJTgxJUIxJUUzJTgyJTkzJUUzJTgxJUE0JTdDJUUzJTgxJThBJUUzJTgxJUI4JUUzJTgxJTlEJTdDJUU0JUI4JUFEJUU1JTg3JUJBJUUzJTgxJTk3JTdDJUUzJTgxJTlGJUUzJTgxJThGJUUzJTgxJTk3JUU0JUI4JThBJUUzJTgxJTkyJTdDJUU2JThBJUIxJUUzJTgxJThEJUU2JTlFJTk1JTdDJUU3JUI3JThBJUU3JUI4JTlCJTdDJUU2JThCJTk4JUU2JTlEJTlG',
+    ),
+  ),
 )
 
 function get_tag_list(imgs) {
@@ -138,11 +86,11 @@ function get_tag_list(imgs) {
     s.set(tag, c ? c + 1 : 1)
   }
   return Array.from(s[Symbol.iterator]()).sort((a, b) =>
-    compare_fallback(b[1], a[1], () => compare(a[0], b[0]))
+    compare_fallback(b[1], a[1], () => compare(a[0], b[0])),
   )
 }
 
-function App(props) {
+function App() {
   const [env, set_env] = useState(null)
   const [error, set_error] = useState(null)
   const [loaded, set_loaded] = useState(false)
@@ -253,7 +201,7 @@ function App(props) {
           set_loaded(true)
           set_error(error)
           set_resp([])
-        }
+        },
       )
   }
 
@@ -313,8 +261,6 @@ function App(props) {
       })
   }, [])
 
-  const { classes } = props
-
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={theme}>
@@ -324,14 +270,14 @@ function App(props) {
             <Toolbar variant="dense">
               <IconButton
                 edge="start"
-                className={classes.menu_button}
+                sx={{ marginRight: 2 }}
                 color="inherit"
                 onClick={open_drawer}
                 size="large"
               >
                 <MenuIcon />
               </IconButton>
-              <div className={classes.box}>
+              <Box sx={{ width: '100%', '& > * + *': { marginTop: 3 } }}>
                 <Autocomplete
                   multiple
                   freeSolo
@@ -362,9 +308,12 @@ function App(props) {
                       const banned = tags_banned.includes(option)
                       return (
                         <Chip
-                          sx={{ userSelect: 'text', zIndex: 7 }}
-                          classes={{
-                            root: banned ? classes.chip_banned : classes.chip,
+                          sx={{
+                            userSelect: 'text',
+                            zIndex: 7,
+                            ...(banned
+                              ? { bgcolor: '#e57373', color: 'inherit' }
+                              : { bgcolor: '#e3f2fd', color: '#1976d2' }),
                           }}
                           variant={banned ? 'filled' : 'outlined'}
                           color={banned ? 'error' : 'primary'}
@@ -389,30 +338,31 @@ function App(props) {
                   )}
                   onChange={(e, value) => {
                     set_tags(
-                      value.map((t) => (typeof t === 'string' ? t : t[0]))
+                      value.map((t) => (typeof t === 'string' ? t : t[0])),
                     )
                   }}
                   value={tags_curr}
-                  classes={{
-                    clearIndicator: classes.clear_indicator,
-                    inputRoot: classes.input_root,
-                    input: classes.input,
+                  sx={{
+                    '& .MuiAutocomplete-clearIndicator': { color: 'white' },
+                    '& .MuiInputBase-input': { color: 'white' },
                   }}
                 />
-              </div>
+              </Box>
             </Toolbar>
           </AppBar>
         </HideOnScroll>
         <EnvContext.Provider value={env}>
           <AppDrawer
-            classes={classes}
             open={drawer_open}
             setOpen={set_drawer_open}
             onRefresh={refresh}
             safe={safe}
             toggleSafe={toggle_safe}
           />
-          <Container className={classes.main} maxWidth="lg">
+          <Container
+            sx={{ paddingLeft: 0, paddingRight: 0, paddingBottom: 4 }}
+            maxWidth="lg"
+          >
             {loaded ? (
               error ? (
                 'Error'
@@ -433,4 +383,4 @@ function App(props) {
   )
 }
 
-export default withStyles(styles)(App)
+export default App

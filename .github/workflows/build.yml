@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # git describe needs tags for the ui-version meta
 
       - uses: pnpm/action-setup@v4
         with:
@@ -24,13 +26,15 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm exec prettier --check src *.js *.json
       - run: pnpm run build
 
       - name: Compress
         run: |
           FILE=pvg-app-${GITHUB_SHA::7}.tar.xz
           echo "FILE=$FILE" >> $GITHUB_ENV
-          tar -cJvf $FILE build
+          tar -cJvf $FILE dist
 
       - uses: actions/upload-artifact@v4
         with:
@@ -42,7 +46,7 @@ jobs:
         run: |
           ZIP_FILE=pvg-app-${GITHUB_REF##*/}.zip
           echo "ZIP_FILE=$ZIP_FILE" >> $GITHUB_ENV
-          cd build
+          cd dist
           zip -r ../$ZIP_FILE *
 
       - uses: shogo82148/actions-upload-release-asset@v1

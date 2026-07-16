@@ -2,52 +2,37 @@
   "name": "pvg-app",
   "version": "0.1.1",
   "private": true,
-  "homepage": "http://pvg.io/s",
+  "type": "module",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^6.5.0",
-    "@mui/material": "^6.5.0",
-    "@mui/styles": "^6.4.8",
+    "@fontsource/roboto": "^5.1.0",
+    "@mui/icons-material": "^9.2.0",
+    "@mui/material": "^9.2.0",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-images": "^1.2.0-beta.7",
     "react-infinite-scroll-component": "^6.1.1",
-    "react-scripts": "^5.0.1",
-    "react-scroll": "^1.9.3",
-    "react-window": "^1.8.11",
-    "typeface-roboto": "^1.1.13"
+    "react-window": "^1.8.11"
   },
   "scripts": {
-    "start": "cross-env REACT_APP_GIT_DESCRIBE=$(git describe --tags --always --dirty) react-scripts start",
-    "build": "cross-env REACT_APP_GIT_DESCRIBE=$(git describe --tags --always --dirty) react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "fmt": "eslint src --fix && prettier src public *.json --write"
-  },
-  "eslintConfig": {
-    "extends": "react-app"
+    "start": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "fmt": "eslint . --fix && prettier src *.js *.json --write"
   },
   "prettier": {
     "singleQuote": true,
     "semi": false
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
   "devDependencies": {
-    "cross-env": "^10.1.0",
-    "eslint": "^8.57.1",
-    "prettier": "^3.7.4"
+    "@eslint/js": "^10.0.0",
+    "@vitejs/plugin-react": "^6.0.3",
+    "eslint": "^10.7.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.9.5",
+    "vite": "^8.1.4"
   }
 }

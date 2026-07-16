@@ -14,6 +14,7 @@ import {
   Link,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemSecondaryAction,
   ListItemText,
@@ -31,6 +32,7 @@ import UpdateIcon from '@mui/icons-material/Update'
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
 import DoneAllIcon from '@mui/icons-material/DoneAll'
 import ArchiveIcon from '@mui/icons-material/Archive'
+import img_bg from './bg.png'
 
 function FullUpdateItem(props) {
   const [dialog_open, set_open] = useState(false)
@@ -46,12 +48,12 @@ function FullUpdateItem(props) {
 
   return (
     <>
-      <ListItem button key="update" onClick={open_dialog}>
+      <ListItemButton key="update" onClick={open_dialog}>
         <ListItemIcon>
           <SyncIcon />
         </ListItemIcon>
         <ListItemText primary="Full Update" />
-      </ListItem>
+      </ListItemButton>
       <Dialog open={dialog_open} onClose={close_dialog}>
         <DialogTitle>Warning</DialogTitle>
         <DialogContent>
@@ -86,20 +88,19 @@ function UpscalingItem() {
 
   return (
     <>
-      <ListItem button key="upscaling" onClick={open_dialog}>
+      <ListItemButton key="upscaling" onClick={open_dialog}>
         <ListItemIcon>
           <SettingsOverscanIcon />
         </ListItemIcon>
         <ListItemText primary="Upscaling" />
-      </ListItem>
+      </ListItemButton>
       <UpscalingDialog open={dialog_open} on_close={close_dialog} />
     </>
   )
 }
 
 const action_mapper = (cb) => (x) => (
-  <ListItem
-    button
+  <ListItemButton
     key={x[2]}
     component="a"
     href={host + 'action/' + x[2]}
@@ -108,7 +109,7 @@ const action_mapper = (cb) => (x) => (
   >
     <ListItemIcon>{x[1]}</ListItemIcon>
     <ListItemText primary={x[0]} />
-  </ListItem>
+  </ListItemButton>
 )
 const action_listitems = [
   ['Incremental Update', <UpdateIcon />, 'qupd'],
@@ -120,7 +121,7 @@ const action_listitems = [
 const EnvContext = React.createContext()
 
 function AppDrawer(props) {
-  const { classes, open, setOpen, onRefresh, safe, toggleSafe } = props
+  const { open, setOpen, onRefresh, safe, toggleSafe } = props
 
   const [settings_open, set_settings_open] = useState(false)
 
@@ -151,50 +152,62 @@ function AppDrawer(props) {
     <Drawer
       open={open}
       onClose={close_drawer}
-      classes={{ paper: classes.drawer }}
+      sx={{ '& .MuiDrawer-paper': { width: 270, bgcolor: 'background.paper' } }}
     >
-      <Card classes={{ root: classes.card }}>
-        <Box mt={3} ml={2} mb={-0.5}>
-          <Avatar src={host + 'avatar'} className={classes.avatar} />
+      <Card
+        sx={{
+          backgroundImage: `url(${img_bg})`,
+          backgroundSize: 'cover',
+          borderRadius: '0px',
+        }}
+      >
+        <Box sx={{ mt: 3, ml: 2, mb: -0.5 }}>
+          <Avatar
+            src={host + 'avatar'}
+            sx={{
+              width: 72,
+              height: 72,
+              boxShadow:
+                'rgba(0, 0, 0, 0.2) 0px 3px 3px -2px, rgba(0, 0, 0, 0.14) 0px 3px 4px 0px, rgba(0, 0, 0, 0.12) 0px 1px 8px 0px',
+            }}
+          />
         </Box>
         <CardHeader
           title={
             card_title_2 ? (
               <>
-                <Box fontWeight="fontWeightBold" display="inline">
+                <Box sx={{ fontWeight: 'fontWeightBold', display: 'inline' }}>
                   {card_title}
                 </Box>
-                <Box ml={1} display="inline">
-                  {card_title_2}
-                </Box>
+                <Box sx={{ ml: 1, display: 'inline' }}>{card_title_2}</Box>
               </>
             ) : (
-              <Box fontWeight="fontWeightBold">{card_title}</Box>
+              <Box sx={{ fontWeight: 'fontWeightBold' }}>{card_title}</Box>
             )
           }
           subheader={card_subtitle}
-          classes={{
-            title: classes.card_text,
-            subheader: classes.card_text,
+          slotProps={{
+            title: { sx: { color: 'white', fontSize: '110%' } },
+            subheader: { sx: { color: 'white', fontSize: '110%' } },
           }}
         />
       </Card>
-      <div className={classes.list} role="presentation">
-        <List className={classes.list}>
+      <Box sx={{ width: 270, bgcolor: 'background.paper' }} role="presentation">
+        <List sx={{ width: 270, bgcolor: 'background.paper' }}>
           <UpscalingItem />
-          <ListItem button key="refresh" onClick={onRefresh}>
+          <ListItemButton key="refresh" onClick={onRefresh}>
             <ListItemIcon>
               <RefreshIcon />
             </ListItemIcon>
             <ListItemText primary="Refresh" />
-          </ListItem>
+          </ListItemButton>
         </List>
         <Divider />
-        <List className={classes.list}>
+        <List sx={{ width: 270, bgcolor: 'background.paper' }}>
           {action_listitems.map(action_mapper(close_drawer))}
         </List>
         <Divider />
-        <List className={classes.list}>
+        <List sx={{ width: 270, bgcolor: 'background.paper' }}>
           <ListItem>
             <ListItemIcon>
               <SecurityIcon />
@@ -205,12 +218,12 @@ function AppDrawer(props) {
             </ListItemSecondaryAction>
           </ListItem>
         </List>
-        <ListItem button key="options" onClick={() => set_settings_open(true)}>
+        <ListItemButton key="options" onClick={() => set_settings_open(true)}>
           <ListItemIcon>
             <SettingsIcon />
           </ListItemIcon>
           <ListItemText primary="Options" />
-        </ListItem>
+        </ListItemButton>
         <Dialog
           open={settings_open}
           onClose={() => set_settings_open(false)}
@@ -246,13 +259,13 @@ function AppDrawer(props) {
                   >
                     pvg-app
                   </Link>
-                  {' ' + process.env.REACT_APP_GIT_DESCRIBE}
+                  {' ' + __GIT_DESCRIBE__}
                 </>
               }
             />
           </ListItem>
         </List>
-      </div>
+      </Box>
     </Drawer>
   )
 }
