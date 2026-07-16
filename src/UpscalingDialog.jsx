@@ -38,8 +38,9 @@ export default function UpscalingDialog(props) {
   const dims = props.dims || [0, 0]
 
   const [file, set_file] = useState()
-  const [old_wh, set_old_wh_0] = useState([...dims])
-  const [old_w, old_h] = old_wh
+  // upload mode only; in img mode the dimensions come from props per open
+  const [upload_wh, set_old_wh_0] = useState([0, 0])
+  const [old_w, old_h] = img ? dims : upload_wh
 
   let default_ratio = '2.00'
   if (old_w) {
@@ -52,7 +53,9 @@ export default function UpscalingDialog(props) {
     default_ratio = r.toFixed(2)
   }
 
-  const [ratio, set_ratio_0] = useState(default_ratio)
+  // null = untouched: track the default, which follows the current dims
+  const [ratio_input, set_ratio_0] = useState(null)
+  const ratio = ratio_input ?? default_ratio
 
   function set_ratio(v, s) {
     if (s > 0) {

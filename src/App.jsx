@@ -162,7 +162,8 @@ function App() {
             const pages = raw_pages.map((page, ind) => {
               const [w, h, pre, fn] = page
               const nav = `/${pid}/${ind}`
-              // FIXME: w & h here may be referred by Upscale window. Can we calculate them later?
+              // w & h are the upscale dialog's fallback when the on-screen
+              // image isn't measurable at open time
               return {
                 pid,
                 ind,

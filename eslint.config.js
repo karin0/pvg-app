@@ -12,11 +12,5 @@ export default [
       parserOptions: { ecmaFeatures: { jsx: true } },
       globals: { ...globals.browser, __GIT_DESCRIBE__: 'readonly' },
     },
-    rules: {
-      // gallery.jsx syncs with react-images' DOM (image dimensions, header
-      // element) which exposes no subscription API; measurement effects there
-      // legitimately set state synchronously.
-      'react-hooks/set-state-in-effect': 'warn',
-    },
   },
 ]

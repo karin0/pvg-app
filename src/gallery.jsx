@@ -32,8 +32,21 @@ const FilterTagsContext = React.createContext()
 
 function UpscalingButton(props) {
   const [dialog_open, set_open] = useState(false)
+  // measured on open, when the viewed image is surely loaded; retained after
+  // close so the exit transition doesn't flash empty dimensions
+  const [dims, set_dims] = useState(null)
 
-  const open_dialog = () => set_open(true)
+  const open_dialog = () => {
+    const el = Array.from(
+      document.querySelectorAll('img.react-images__view-image'),
+    ).find((e) => e.src.includes(props.img.ori))
+    set_dims(
+      el?.naturalWidth && el?.naturalHeight
+        ? [el.naturalWidth, el.naturalHeight]
+        : [props.img.w, props.img.h],
+    )
+    set_open(true)
+  }
   const close_dialog = () => set_open(false)
 
   return (
@@ -52,7 +65,7 @@ function UpscalingButton(props) {
       </IconButton>
       <UpscalingDialog
         img={props.img}
-        dims={props.dims}
+        dims={dims || undefined}
         open={dialog_open}
         on_confirm={props.on_confirm}
         on_close={close_dialog}
@@ -72,11 +85,8 @@ function CaptionLink(props) {
 }
 function ImageCaption(props) {
   const [show, set_show] = useState(true)
-  const [real_dims, set_real_dims] = useState(undefined)
 
   const img = props.img
-  // allow img.w and img.h to be predicted
-  const dims = real_dims || [img.w, img.h]
 
   useEffect(() => {
     const a = document.querySelectorAll('img.react-images__view-image')
@@ -84,29 +94,10 @@ function ImageCaption(props) {
       if (e.src.includes(img.ori)) {
         const f = () => set_show(!show)
         e.addEventListener('click', f)
-        if (!real_dims) {
-          const dims = [e.naturalWidth, e.naturalHeight]
-          if (dims[0] && dims[1]) set_real_dims(dims)
-          else {
-            const g = (ev) => {
-              const e = ev.target
-              const dims = [e.naturalWidth, e.naturalHeight]
-              if (dims[0] && dims[1]) {
-                set_real_dims(dims)
-                e.removeEventListener('load', g)
-              }
-            }
-            e.addEventListener('load', g)
-            return () => {
-              e.removeEventListener('click', f)
-              e.removeEventListener('load', g)
-            }
-          }
-        }
         return () => e.removeEventListener('click', f)
       }
     }
-  }, [img, show, real_dims])
+  }, [img, show])
 
   const update_tags = useContext(TagUpdaterContext)
   const tag_map = useContext(FilterTagsContext)
@@ -125,6 +116,7 @@ function ImageCaption(props) {
   const [btn_box, set_btn_box] = useState(null)
   useEffect(() => {
     const e = document.getElementsByClassName('react-images__header')
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- locating react-images' header as a portal target; no mount callback exists
     if (e[0]) set_btn_box(e[0])
   }, [btn_box])
 
@@ -206,10 +198,7 @@ function ImageCaption(props) {
         </div>
         {show &&
           btn_box &&
-          ReactDOM.createPortal(
-            <UpscalingButton img={img} dims={dims} />,
-            btn_box,
-          )}
+          ReactDOM.createPortal(<UpscalingButton img={img} />, btn_box)}
       </div>
     </Fade>
   )
