@@ -256,10 +256,16 @@ function App() {
       method: 'GET',
     })
       .then((res) => res.json())
-      .then((res) => {
-        console.log('env:', res)
-        set_env(res)
-      })
+      .then(
+        (res) => {
+          console.log('env:', res)
+          set_env(res)
+        },
+        (error) => {
+          set_loaded(true)
+          set_error(error)
+        },
+      )
   }, [])
 
   return (
@@ -365,16 +371,16 @@ function App() {
             sx={{ paddingLeft: 0, paddingRight: 0, paddingBottom: 4 }}
             maxWidth="lg"
           >
-            {loaded ? (
-              error ? (
-                'Error'
-              ) : (
-                <TagUpdaterContext.Provider value={toggle_tag}>
-                  <FilterTagsContext.Provider value={tags_curr_map}>
-                    <PvgGallery images={images} locating_id={locating_id} />
-                  </FilterTagsContext.Provider>
-                </TagUpdaterContext.Provider>
-              )
+            {error ? (
+              'Error'
+            ) : loaded && env ? (
+              // env gates the first render so switch defaults from
+              // `switch_defaults` apply before any switch is drawn.
+              <TagUpdaterContext.Provider value={toggle_tag}>
+                <FilterTagsContext.Provider value={tags_curr_map}>
+                  <PvgGallery images={images} locating_id={locating_id} />
+                </FilterTagsContext.Provider>
+              </TagUpdaterContext.Provider>
             ) : (
               'Loading..'
             )}

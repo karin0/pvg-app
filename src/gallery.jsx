@@ -28,6 +28,35 @@ import { useStorage } from './util'
 const TagUpdaterContext = React.createContext()
 const FilterTagsContext = React.createContext()
 
+function illust_url(img, env) {
+  return (
+    img.meta?.url ||
+    (env?.illust_prefix || 'https://www.pixiv.net/artworks/') + img.pid
+  )
+}
+
+// The hue tracks the value from red through to the theme's green (secondary
+// #7ec897 sits at ~140°), translucent so the image underneath stays visible.
+// Saturation dips toward the neutral midpoint so the yellow band reads as a
+// muted olive rather than a loud pure yellow.
+function ScoreChip(props) {
+  const t = (Math.max(-7, Math.min(7, props.score)) + 7) / 14
+  const hue = 8 + t * 132
+  const sat = 40 + 30 * Math.abs(2 * t - 1)
+  const { score } = props
+  return (
+    <Chip
+      label={(score >= 0 ? '+' : '') + score.toFixed(2)}
+      size="small"
+      style={{
+        ...props.style,
+        backgroundColor: `hsla(${hue}, ${sat}%, 40%, 0.65)`,
+        color: '#fff',
+      }}
+    />
+  )
+}
+
 function UpscalingButton(props) {
   const [dialog_open, set_open] = useState(false)
   // measured on open, when the viewed image is surely loaded; retained after
@@ -104,13 +133,6 @@ function ImageCaption(props) {
   const author_prefix = env?.author_prefix || 'https://www.pixiv.net/users/'
   const author_url = author_prefix + img.aid.toString()
 
-  let illust_url = img.meta?.url
-  if (!illust_url) {
-    const illust_prefix =
-      env?.illust_prefix || 'https://www.pixiv.net/artworks/'
-    illust_url = illust_prefix + img.pid.toString()
-  }
-
   const [btn_box, set_btn_box] = useState(null)
   useEffect(() => {
     const e = document.getElementsByClassName('react-images__header')
@@ -139,7 +161,10 @@ function ImageCaption(props) {
             }}
           >
             <span style={{ paddingRight: '8px' }}>
-              <CaptionLink url={illust_url} text={img.title + ' - '} />
+              <CaptionLink
+                url={illust_url(img, env)}
+                text={img.title + ' - '}
+              />
             </span>
             <CaptionLink url={author_url} text={img.author} />
             <Chip
@@ -180,6 +205,12 @@ function ImageCaption(props) {
             })}
           </div>
           <div style={{ marginTop: '12px' }}>
+            {img.meta?.score != null && (
+              <ScoreChip
+                score={img.meta.score}
+                style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
+              />
+            )}
             <Chip
               style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
               label={img.pid}
@@ -202,7 +233,10 @@ function ImageCaption(props) {
   )
 }
 
-const ShowTitleContext = React.createContext(false)
+const GalleryOptionsContext = React.createContext({
+  show_title: false,
+  goto_link: false,
+})
 
 function CarouselModal(props) {
   const { index, setIndex, images } = props
@@ -232,8 +266,9 @@ function GalleryView(props) {
   const cols = md ? 3 : 2
   const gap = md ? 4 : 2
 
-  const show_title = useContext(ShowTitleContext)
+  const { show_title, goto_link } = useContext(GalleryOptionsContext)
   const show_images = useContext(ModalCallbacksContext)
+  const env = useContext(EnvContext)
 
   const { images } = props
 
@@ -268,52 +303,62 @@ function GalleryView(props) {
           {column.map((i) => {
             const img = images[i]
             const { pages } = img
-            const multi_pages = pages && pages.length > 1
-            return (
-              <Box key={img.ori} sx={{ position: 'relative' }}>
-                <img
-                  src={host + img.ori}
-                  loading="lazy"
-                  onClick={
-                    multi_pages
+            const score = img.meta?.score
+            // meta.pc indicates the illust's real page count where we got
+            // fewer pages than exist. Paging behavior follows the pages
+            // actually served.
+            const pc = pages ? (img.meta?.pc ?? pages.length) : 0
+            const image = (
+              <img
+                src={host + img.ori}
+                loading="lazy"
+                onClick={
+                  goto_link
+                    ? undefined
+                    : pages && pages.length > 1
                       ? () => show_images(img.pages, 0)
                       : () => show_images(images, i)
-                  }
-                  alt={img.title}
-                  width={img.w}
-                  height={img.h}
-                  style={{ display: 'block', width: '100%', height: 'auto' }}
-                />
-                {show_title ? (
-                  <ImageListItemBar
-                    title={img.title}
-                    subtitle={img.author}
-                    actionIcon={
-                      multi_pages && (
-                        <Chip
-                          label={pages.length}
-                          color="info"
-                          style={{ marginRight: 8 }}
-                          size="small"
-                        />
-                      )
-                    }
-                  />
+                }
+                alt={img.title}
+                width={img.w}
+                height={img.h}
+                style={{ display: 'block', width: '100%', height: 'auto' }}
+              />
+            )
+            // actionIcon flows its children inline, which wraps two chips
+            // apart in a narrow column; the flex row pins them side by side.
+            const icons = (score != null || pc > 1) && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  m: '6px 8px 6px 0',
+                }}
+              >
+                {score != null && <ScoreChip score={score} />}
+                {pc > 1 && <Chip label={pc} color="info" size="small" />}
+              </Box>
+            )
+            return (
+              <Box key={img.ori} sx={{ position: 'relative' }}>
+                {goto_link ? (
+                  <a
+                    href={illust_url(img, env)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {image}
+                  </a>
                 ) : (
-                  multi_pages && (
-                    <ImageListItemBar
-                      actionIcon={
-                        <Chip
-                          label={pages.length}
-                          color="info"
-                          style={{
-                            margin: '6px 8px 6px 0',
-                          }}
-                          size="small"
-                        />
-                      }
-                    />
-                  )
+                  image
+                )}
+                {(show_title || icons) && (
+                  <ImageListItemBar
+                    title={show_title ? img.title : undefined}
+                    subtitle={show_title ? img.author : undefined}
+                    actionIcon={icons || undefined}
+                  />
                 )}
               </Box>
             )
@@ -389,10 +434,16 @@ function GallerySwitch(props) {
 }
 
 function PvgGallery(props) {
-  const [resorted, set_resorted] = useStorage('resorted', false)
-  const [reversed, set_reversed] = useStorage('reversed', false)
-  const [expanded, set_expanded] = useStorage('expanded', false)
-  const [show_title, set_show_title] = useStorage('show_title', false)
+  const env = useContext(EnvContext)
+  // Backend-declared defaults apply only when the user never touched the
+  // switch; useStorage persists nothing until the first toggle.
+  const useSwitch = (key) =>
+    useStorage(key, () => (env?.switch_defaults ?? []).includes(key))
+  const [resorted, set_resorted] = useSwitch('resorted')
+  const [reversed, set_reversed] = useSwitch('reversed')
+  const [expanded, set_expanded] = useSwitch('expanded')
+  const [show_title, set_show_title] = useSwitch('show_title')
+  const [goto_link, set_goto_link] = useSwitch('goto_link')
 
   const illusts = props.images
   const images = useMemo(() => {
@@ -452,6 +503,11 @@ function PvgGallery(props) {
           {real_page_num} pages from {illusts.length} illusts by {sa.size} users
         </Typography>
         <GallerySwitch
+          label="Go to Link"
+          checked={goto_link}
+          setChecked={set_goto_link}
+        />
+        <GallerySwitch
           label="Show Titles"
           checked={show_title}
           setChecked={set_show_title}
@@ -473,13 +529,13 @@ function PvgGallery(props) {
         />
       </Box>
       <Box sx={{ mt: 1 }}>
-        <ShowTitleContext.Provider value={show_title}>
+        <GalleryOptionsContext.Provider value={{ show_title, goto_link }}>
           <GalleryPagination
             pages={pages}
             default_offset={offset}
             key={[ha, hs]}
           />
-        </ShowTitleContext.Provider>
+        </GalleryOptionsContext.Provider>
       </Box>
     </Box>
   )
