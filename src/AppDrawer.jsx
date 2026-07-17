@@ -18,9 +18,11 @@ import {
   ListItemIcon,
   ListItemSecondaryAction,
   ListItemText,
+  MenuItem,
+  Select,
   Switch,
 } from '@mui/material'
-import { host } from './env'
+import { host, hosts } from './env'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import SecurityIcon from '@mui/icons-material/Security'
 import SettingsIcon from '@mui/icons-material/Settings'
@@ -32,6 +34,7 @@ import UpdateIcon from '@mui/icons-material/Update'
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
 import DoneAllIcon from '@mui/icons-material/DoneAll'
 import ArchiveIcon from '@mui/icons-material/Archive'
+import DnsIcon from '@mui/icons-material/Dns'
 import img_bg from './bg.png'
 
 function FullUpdateItem(props) {
@@ -96,6 +99,40 @@ function UpscalingItem() {
       </ListItemButton>
       <UpscalingDialog open={dialog_open} on_close={close_dialog} />
     </>
+  )
+}
+
+function EndpointItem() {
+  if (!hosts.length) return null
+
+  // Show the live host even when it isn't configured, so the Select never
+  // holds an out-of-range value and the operator can always see where it hits.
+  const options = hosts.includes(host) ? hosts : [host, ...hosts]
+
+  const switch_host = (e) => {
+    localStorage.setItem('dev_host', e.target.value)
+    window.location.reload()
+  }
+
+  return (
+    <ListItem key="endpoint">
+      <ListItemIcon>
+        <DnsIcon />
+      </ListItemIcon>
+      <ListItemText primary="Endpoint" />
+      <Select
+        value={host}
+        onChange={switch_host}
+        size="small"
+        sx={{ minWidth: 160, maxWidth: 320 }}
+      >
+        {options.map((h) => (
+          <MenuItem key={h} value={h}>
+            {h}
+          </MenuItem>
+        ))}
+      </Select>
+    </ListItem>
   )
 }
 
@@ -233,6 +270,7 @@ function AppDrawer(props) {
           <DialogTitle>Options</DialogTitle>
           <DialogContent>
             <List style={{ width: '100%' }}>
+              <EndpointItem />
               <FullUpdateItem on_confirm={close_drawer} />
             </List>
           </DialogContent>
