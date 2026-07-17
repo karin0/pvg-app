@@ -19,7 +19,7 @@
   "scripts": {
     "start": "vite",
     "build": "vite build",
-    "lint": "eslint --max-warnings 0 .",
+    "lint": "eslint --max-warnings 0 . && prettier --check src *.js *.json",
     "fmt": "eslint . --fix && prettier src *.js *.json --write"
   },
   "prettier": {

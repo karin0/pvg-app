@@ -27,7 +27,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
-      - run: pnpm exec prettier --check src *.js *.json
       - run: pnpm run build
 
       - name: Compress
