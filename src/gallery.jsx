@@ -101,6 +101,17 @@ function UpscalingButton(props) {
   )
 }
 
+// chip text with the backend's optional note as an opaque suffix
+function chip_label(text, note) {
+  return note ? (
+    <>
+      {text} <span style={{ opacity: 0.72 }}>{note}</span>
+    </>
+  ) : (
+    text
+  )
+}
+
 function CaptionLink(props) {
   return (
     <Typography>
@@ -141,6 +152,25 @@ function ImageCaption(props) {
   }, [btn_box])
 
   const apos = tag_map.get(img.author)
+  const notes = img.meta?.tag_notes
+  const tag_chip = (tag, small) => {
+    const pos = tag_map.get(tag)
+    return (
+      <Chip
+        key={tag}
+        size={small ? 'small' : undefined}
+        style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
+        color={isNaN(pos) ? 'info' : 'primary'}
+        label={chip_label(tag, notes?.[tag])}
+        onClick={() => {
+          props.close_modal()
+          update_tags(tag, img.iid, pos)
+        }}
+      />
+    )
+  }
+  const noted = notes ? img.tags.filter((t) => notes[t]) : []
+  const plain = notes ? img.tags.filter((t) => !notes[t]) : img.tags
   return (
     <Fade in={show}>
       <div>
@@ -182,28 +212,19 @@ function ImageCaption(props) {
             <Chip
               style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
               color={isNaN(apos) ? 'secondary' : 'primary'}
-              label={img.author}
+              label={chip_label(img.author, notes?.[img.author])}
               onClick={() => {
                 props.close_modal()
                 update_tags(img.author, img.iid, apos)
               }}
             />
-            {img.tags.map((tag) => {
-              const pos = tag_map.get(tag)
-              return (
-                <Chip
-                  key={tag}
-                  style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
-                  color={isNaN(pos) ? 'info' : 'primary'}
-                  label={tag}
-                  onClick={() => {
-                    props.close_modal()
-                    update_tags(tag, img.iid, pos)
-                  }}
-                />
-              )
-            })}
+            {plain.map((tag) => tag_chip(tag, false))}
           </div>
+          {noted.length > 0 && (
+            <div style={{ marginTop: '8px', marginBottom: '-8px' }}>
+              {noted.map((tag) => tag_chip(tag, true))}
+            </div>
+          )}
           <div style={{ marginTop: '12px' }}>
             {img.meta?.score != null && (
               <ScoreChip
