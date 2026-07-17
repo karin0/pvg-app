@@ -1,3 +1,13 @@
+import ArchiveIcon from '@mui/icons-material/Archive'
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
+import DnsIcon from '@mui/icons-material/Dns'
+import DoneAllIcon from '@mui/icons-material/DoneAll'
+import RefreshIcon from '@mui/icons-material/Refresh'
+import SecurityIcon from '@mui/icons-material/Security'
+import SettingsIcon from '@mui/icons-material/Settings'
+import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan'
+import SyncIcon from '@mui/icons-material/Sync'
+import UpdateIcon from '@mui/icons-material/Update'
 import {
   Avatar,
   Box,
@@ -22,20 +32,11 @@ import {
   Select,
   Switch,
 } from '@mui/material'
-import { host, hosts } from './env'
-import RefreshIcon from '@mui/icons-material/Refresh'
-import SecurityIcon from '@mui/icons-material/Security'
-import SettingsIcon from '@mui/icons-material/Settings'
 import React, { useContext, useState } from 'react'
-import SyncIcon from '@mui/icons-material/Sync'
-import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan'
-import UpscalingDialog from './UpscalingDialog'
-import UpdateIcon from '@mui/icons-material/Update'
-import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
-import DoneAllIcon from '@mui/icons-material/DoneAll'
-import ArchiveIcon from '@mui/icons-material/Archive'
-import DnsIcon from '@mui/icons-material/Dns'
+
 import img_bg from './bg.png'
+import { host, hosts } from './env'
+import UpscalingDialog from './UpscalingDialog'
 
 function FullUpdateItem(props) {
   const [dialog_open, set_open] = useState(false)

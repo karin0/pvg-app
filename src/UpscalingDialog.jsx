@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 import {
   Box,
   Button,
@@ -16,6 +14,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import { useState } from 'react'
+
 import { host, upscale_target } from './env'
 
 const noise_levels = [

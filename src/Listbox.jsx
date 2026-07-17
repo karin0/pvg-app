@@ -1,5 +1,5 @@
-import React from 'react'
 import PropTypes from 'prop-types'
+import React from 'react'
 import { List } from 'react-window'
 
 // .MuiAutocomplete-listbox pads the scroller by 8px vertically; account for

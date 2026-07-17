@@ -6,6 +6,7 @@ import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/500.css'
 import '@fontsource/roboto/700.css'
 
+import MenuIcon from '@mui/icons-material/Menu'
 import {
   AppBar,
   Box,
@@ -18,25 +19,20 @@ import {
   Toolbar,
   useScrollTrigger,
 } from '@mui/material'
-
-import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles'
-// import { darkWhite, lightWhite } from '@mui/material/colors';
 import Autocomplete from '@mui/material/Autocomplete'
+import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles'
 
-import MenuIcon from '@mui/icons-material/Menu'
-
-import ListboxComponent from './Listbox'
+import AppDrawer from './AppDrawer'
+import { host } from './env'
 import {
+  EnvContext,
   FilterTagsContext,
   PvgGallery,
   TagUpdaterContext,
-  EnvContext,
 } from './gallery'
-import { host } from './env'
-import { useStorage } from './util'
+import ListboxComponent from './Listbox'
 import theme from './theme'
-
-import AppDrawer from './AppDrawer'
+import { useStorage } from './util'
 
 function compare(a, b) {
   if (a < b) return -1
