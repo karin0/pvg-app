@@ -136,23 +136,27 @@ function EndpointItem() {
   )
 }
 
-const action_mapper = (cb) => (x) => (
-  <ListItemButton
-    key={x[2]}
-    component="a"
-    href={host + 'action/' + x[2]}
-    target="_blank"
-    onClick={cb}
-  >
-    <ListItemIcon>{x[1]}</ListItemIcon>
-    <ListItemText primary={x[0]} />
-  </ListItemButton>
-)
+const action_mapper =
+  (cb) =>
+  ([label, Icon, act]) => (
+    <ListItemButton
+      key={act}
+      component="a"
+      href={host + 'action/' + act}
+      target="_blank"
+      onClick={cb}
+    >
+      <ListItemIcon>
+        <Icon />
+      </ListItemIcon>
+      <ListItemText primary={label} />
+    </ListItemButton>
+  )
 const action_listitems = [
-  ['Incremental Update', <UpdateIcon />, 'qupd'],
-  ['Download All', <CloudDownloadIcon />, 'download'],
-  ['Archive Orphan Files', <ArchiveIcon />, 'orphan'],
-  ['Do all 3 above', <DoneAllIcon />, 'qudo'],
+  ['Incremental Update', UpdateIcon, 'qupd'],
+  ['Download All', CloudDownloadIcon, 'download'],
+  ['Archive Orphan Files', ArchiveIcon, 'orphan'],
+  ['Do all 3 above', DoneAllIcon, 'qudo'],
 ]
 
 const EnvContext = React.createContext()

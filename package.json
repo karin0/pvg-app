@@ -19,20 +19,12 @@
   "scripts": {
     "start": "vite",
     "build": "vite build",
-    "lint": "eslint --max-warnings 0 . && prettier --check src *.js *.json",
-    "fmt": "eslint . --fix && prettier src *.js *.json --write"
-  },
-  "prettier": {
-    "singleQuote": true,
-    "semi": false
+    "lint": "biome check --error-on-warnings .",
+    "fmt": "biome check --write ."
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.0",
+    "@biomejs/biome": "2.5.4",
     "@vitejs/plugin-react": "^6.0.3",
-    "eslint": "^10.7.0",
-    "eslint-plugin-react-hooks": "^7.0.0",
-    "globals": "^17.7.0",
-    "prettier": "^3.9.5",
     "vite": "^8.1.4"
   }
 }

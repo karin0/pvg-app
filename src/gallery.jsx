@@ -145,9 +145,9 @@ function ImageCaption(props) {
   const author_url = author_prefix + img.aid.toString()
 
   const [btn_box, set_btn_box] = useState(null)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: captures react-images' header as a portal target; the self-dep binds it once the node mounts, and no mount callback exists for it
   useEffect(() => {
     const e = document.getElementsByClassName('react-images__header')
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- locating react-images' header as a portal target; no mount callback exists
     if (e[0]) set_btn_box(e[0])
   }, [btn_box])
 
@@ -160,7 +160,7 @@ function ImageCaption(props) {
         key={tag}
         size={small ? 'small' : undefined}
         style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
-        color={isNaN(pos) ? 'info' : 'primary'}
+        color={pos === undefined ? 'info' : 'primary'}
         label={chip_label(tag, notes?.[tag])}
         onClick={() => {
           props.close_modal()
@@ -211,7 +211,7 @@ function ImageCaption(props) {
           <div style={{ marginTop: '4px', marginBottom: '-8px' }}>
             <Chip
               style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
-              color={isNaN(apos) ? 'secondary' : 'primary'}
+              color={apos === undefined ? 'secondary' : 'primary'}
               label={chip_label(img.author, notes?.[img.author])}
               onClick={() => {
                 props.close_modal()
@@ -311,6 +311,7 @@ function GalleryView(props) {
     <Box sx={{ display: 'flex', gap: `${gap}px` }}>
       {columns.map((column, k) => (
         <Box
+          // biome-ignore lint/suspicious/noArrayIndexKey: masonry columns are positional buckets that never reorder, so the index is a stable key
           key={k}
           sx={{
             flex: 1,

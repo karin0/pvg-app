@@ -59,7 +59,7 @@ export default function UpscalingDialog(props) {
 
   function set_ratio(v, s) {
     if (s > 0) {
-      const m = parseInt(100000 / s)
+      const m = Math.trunc(100000 / s)
       if (v > m) v = m.toString()
     }
     set_ratio_0(v)
@@ -76,6 +76,7 @@ export default function UpscalingDialog(props) {
         action={host + 'upscale'}
         method="POST"
         target="_blank"
+        rel="noopener"
         //encType="multipart/form-data"
       >
         <DialogTitle>Upscaling</DialogTitle>

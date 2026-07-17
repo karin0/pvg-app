@@ -221,7 +221,7 @@ function App() {
 
   const toggle_tag = (tag, id, pos) => {
     console.debug('toggle_tag', tag, id, pos, tags_curr, tags_banned)
-    if (isNaN(pos)) set_tags_curr(tags_curr.concat([tag]))
+    if (pos === undefined) set_tags_curr(tags_curr.concat([tag]))
     else {
       const tags = tags_curr.slice(0)
       tags.splice(pos, 1)
@@ -248,6 +248,7 @@ function App() {
     set_safe(!safe)
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: locating_id gates the refetch — Refresh and re-locate re-run the query by changing it
   useEffect(update, [tags_curr, tags_banned, locating_id])
 
   useEffect(() => {
@@ -315,6 +316,7 @@ function App() {
                     value.map((option, index) => {
                       const banned = tags_banned.includes(option)
                       return (
+                        // biome-ignore lint/correctness/useJsxKeyInIterable: getItemProps supplies the key via spread
                         <Chip
                           sx={{
                             userSelect: 'text',
@@ -344,7 +346,7 @@ function App() {
                   renderInput={(params) => (
                     <TextField fullWidth color="primary" {...params} />
                   )}
-                  onChange={(e, value) => {
+                  onChange={(_, value) => {
                     set_tags(
                       value.map((t) => (typeof t === 'string' ? t : t[0])),
                     )
