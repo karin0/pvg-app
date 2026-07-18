@@ -2,5 +2,6 @@
 .vscode
 node_modules
 .*cache
+*.env
 dist
 dep
