@@ -1,7 +1,6 @@
 import ArchiveIcon from '@mui/icons-material/Archive'
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
-import DnsIcon from '@mui/icons-material/Dns'
 import DoneAllIcon from '@mui/icons-material/DoneAll'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import SecurityIcon from '@mui/icons-material/Security'
@@ -29,14 +28,12 @@ import {
   ListItemIcon,
   ListItemSecondaryAction,
   ListItemText,
-  MenuItem,
-  Select,
   Switch,
 } from '@mui/material'
 import React, { useContext, useState } from 'react'
 
 import img_bg from './bg.png'
-import { host, hosts } from './env'
+import { host } from './env'
 import UpscalingDialog from './UpscalingDialog'
 
 function FullUpdateItem(props) {
@@ -101,40 +98,6 @@ function UpscalingItem() {
       </ListItemButton>
       <UpscalingDialog open={dialog_open} on_close={close_dialog} />
     </>
-  )
-}
-
-function EndpointItem() {
-  if (!hosts.length) return null
-
-  // Show the live host even when it isn't configured, so the Select never
-  // holds an out-of-range value and the operator can always see where it hits.
-  const options = hosts.includes(host) ? hosts : [host, ...hosts]
-
-  const switch_host = (e) => {
-    localStorage.setItem('dev_host', e.target.value)
-    window.location.reload()
-  }
-
-  return (
-    <ListItem key="endpoint">
-      <ListItemIcon>
-        <DnsIcon />
-      </ListItemIcon>
-      <ListItemText primary="Endpoint" />
-      <Select
-        value={host}
-        onChange={switch_host}
-        size="small"
-        sx={{ minWidth: 160, maxWidth: 320 }}
-      >
-        {options.map((h) => (
-          <MenuItem key={h} value={h}>
-            {h}
-          </MenuItem>
-        ))}
-      </Select>
-    </ListItem>
   )
 }
 
@@ -290,7 +253,6 @@ function AppDrawer(props) {
           <DialogTitle>Options</DialogTitle>
           <DialogContent>
             <List style={{ width: '100%' }}>
-              <EndpointItem />
               <FullUpdateItem on_confirm={close_drawer} />
             </List>
           </DialogContent>

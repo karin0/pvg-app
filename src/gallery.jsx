@@ -3,11 +3,9 @@ import {
   Box,
   Chip,
   Fade,
-  FormControlLabel,
   IconButton,
   ImageListItemBar,
   Link,
-  Switch,
   Typography,
   useMediaQuery,
   useTheme,
@@ -20,7 +18,6 @@ import InfiniteScroll from 'react-infinite-scroll-component'
 import { EnvContext } from './AppDrawer'
 import { host, images_per_page } from './env'
 import UpscalingDialog from './UpscalingDialog'
-import { useStorage } from './util'
 
 const TagUpdaterContext = React.createContext()
 const FilterTagsContext = React.createContext()
@@ -437,33 +434,8 @@ function GalleryPagination(props) {
   )
 }
 
-function GallerySwitch(props) {
-  return (
-    <FormControlLabel
-      style={{ float: 'right' }}
-      control={
-        <Switch
-          checked={props.checked}
-          onChange={(e) => props.setChecked(e.target.checked)}
-          size="small"
-        />
-      }
-      label={props.label}
-    />
-  )
-}
-
 function PvgGallery(props) {
-  const env = useContext(EnvContext)
-  // Backend-declared defaults apply only when the user never touched the
-  // switch; useStorage persists nothing until the first toggle.
-  const useSwitch = (key) =>
-    useStorage(key, () => (env?.switch_defaults ?? []).includes(key))
-  const [resorted, set_resorted] = useSwitch('resorted')
-  const [reversed, set_reversed] = useSwitch('reversed')
-  const [expanded, set_expanded] = useSwitch('expanded')
-  const [show_title, set_show_title] = useSwitch('show_title')
-  const [goto_link, set_goto_link] = useSwitch('goto_link')
+  const { resorted, reversed, expanded, show_title, goto_link } = props
 
   const illusts = props.images
   const images = useMemo(() => {
@@ -480,10 +452,6 @@ function PvgGallery(props) {
     }))
   }, [illusts, resorted, reversed, expanded])
 
-  const real_page_num = useMemo(() => {
-    return illusts.reduce((acc, o) => acc + o.pages.length, 0)
-  }, [illusts])
-
   const pages = []
   let page = [],
     offset = 0,
@@ -491,10 +459,7 @@ function PvgGallery(props) {
     hs = 0,
     cnt = 0
 
-  const sa = new Set()
   for (const img of images) {
-    sa.add(img.aid)
-
     ++cnt
     ha ^= img.pid + (img.w || 0) + cnt + hs
     hs += img.pid + (img.h || 0) + ((x) => (x >= 0 ? x : -2 * x))(cnt ^ ha)
@@ -514,49 +479,13 @@ function PvgGallery(props) {
 
   return (
     <Box sx={{ pt: 8 }}>
-      <Box sx={{ width: '100%', display: 'flow-root', px: 2 }}>
-        <Typography
-          sx={{ display: 'inline' }}
-          color="textSecondary"
-          variant="body2"
-        >
-          {real_page_num} pages from {illusts.length} illusts by {sa.size} users
-        </Typography>
-        <GallerySwitch
-          label="Go to Link"
-          checked={goto_link}
-          setChecked={set_goto_link}
+      <GalleryOptionsContext.Provider value={{ show_title, goto_link }}>
+        <GalleryPagination
+          pages={pages}
+          default_offset={offset}
+          key={[ha, hs]}
         />
-        <GallerySwitch
-          label="Show Titles"
-          checked={show_title}
-          setChecked={set_show_title}
-        />
-        <GallerySwitch
-          label="Expanded"
-          checked={expanded}
-          setChecked={set_expanded}
-        />
-        <GallerySwitch
-          label="Reversed"
-          checked={reversed}
-          setChecked={set_reversed}
-        />
-        <GallerySwitch
-          label="Sort by Date"
-          checked={resorted}
-          setChecked={set_resorted}
-        />
-      </Box>
-      <Box sx={{ mt: 1 }}>
-        <GalleryOptionsContext.Provider value={{ show_title, goto_link }}>
-          <GalleryPagination
-            pages={pages}
-            default_offset={offset}
-            key={[ha, hs]}
-          />
-        </GalleryOptionsContext.Provider>
-      </Box>
+      </GalleryOptionsContext.Provider>
     </Box>
   )
 }

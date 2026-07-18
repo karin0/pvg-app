@@ -24,6 +24,7 @@ import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles'
 
 import AppDrawer from './AppDrawer'
 import { host } from './env'
+import FloatingControls from './FloatingControls'
 import {
   EnvContext,
   FilterTagsContext,
@@ -103,6 +104,19 @@ function App() {
     return v
   })
 
+  // A switch untouched by the user (stored value null) follows the backend's
+  // declared default, which may arrive after mount; deriving the effective
+  // value each render lets a late `env` apply without freezing a stale default.
+  const useSwitch = (key) => {
+    const [v, set_v] = useStorage(key, null)
+    return [v ?? (env?.switch_defaults ?? []).includes(key), set_v]
+  }
+  const [resorted, set_resorted] = useSwitch('resorted')
+  const [reversed, set_reversed] = useSwitch('reversed')
+  const [expanded, set_expanded] = useSwitch('expanded')
+  const [show_title, set_show_title] = useSwitch('show_title')
+  const [goto_link, set_goto_link] = useSwitch('goto_link')
+
   const tags_curr_map = new Map()
   for (let i = 0; i < tags_curr.length; ++i) tags_curr_map.set(tags_curr[i], i)
 
@@ -120,6 +134,20 @@ function App() {
   const tags = useMemo(() => {
     return get_tag_list(images)
   }, [images])
+
+  const stats = useMemo(() => {
+    const pages = images.reduce((acc, o) => acc + o.pages.length, 0)
+    const users = new Set(images.map((o) => o.aid)).size
+    return `${pages} pages from ${images.length} illusts by ${users} users`
+  }, [images])
+
+  const gallery_switches = [
+    { label: 'Sort by Date', checked: resorted, setChecked: set_resorted },
+    { label: 'Reversed', checked: reversed, setChecked: set_reversed },
+    { label: 'Expanded', checked: expanded, setChecked: set_expanded },
+    { label: 'Show Titles', checked: show_title, setChecked: set_show_title },
+    { label: 'Go to Link', checked: goto_link, setChecked: set_goto_link },
+  ]
 
   function update() {
     // console.log('update with', this.state.tags_curr, this.state.locating_id);
@@ -380,11 +408,19 @@ function App() {
             {error ? (
               'Error'
             ) : loaded && env ? (
-              // env gates the first render so switch defaults from
-              // `switch_defaults` apply before any switch is drawn.
+              // env carries the illust/author URL prefixes the gallery links
+              // use; gating on it avoids a first paint with the Pixiv fallbacks.
               <TagUpdaterContext.Provider value={toggle_tag}>
                 <FilterTagsContext.Provider value={tags_curr_map}>
-                  <PvgGallery images={images} locating_id={locating_id} />
+                  <PvgGallery
+                    images={images}
+                    locating_id={locating_id}
+                    resorted={resorted}
+                    reversed={reversed}
+                    expanded={expanded}
+                    show_title={show_title}
+                    goto_link={goto_link}
+                  />
                 </FilterTagsContext.Provider>
               </TagUpdaterContext.Provider>
             ) : (
@@ -392,6 +428,10 @@ function App() {
             )}
           </Container>
         </EnvContext.Provider>
+        <FloatingControls
+          switches={gallery_switches}
+          caption={loaded && env ? stats : null}
+        />
       </ThemeProvider>
     </StyledEngineProvider>
   )
