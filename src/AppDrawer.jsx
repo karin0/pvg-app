@@ -1,5 +1,6 @@
 import ArchiveIcon from '@mui/icons-material/Archive'
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
+import DarkModeIcon from '@mui/icons-material/DarkMode'
 import DnsIcon from '@mui/icons-material/Dns'
 import DoneAllIcon from '@mui/icons-material/DoneAll'
 import RefreshIcon from '@mui/icons-material/Refresh'
@@ -163,7 +164,7 @@ const action_listitems = [
 const EnvContext = React.createContext()
 
 function AppDrawer(props) {
-  const { open, setOpen, onRefresh, safe, toggleSafe } = props
+  const { open, setOpen, onRefresh, safe, toggleSafe, dark, toggleDark } = props
 
   const [settings_open, set_settings_open] = useState(false)
 
@@ -194,7 +195,8 @@ function AppDrawer(props) {
     <Drawer
       open={open}
       onClose={close_drawer}
-      sx={{ '& .MuiDrawer-paper': { width: 270, bgcolor: 'background.paper' } }}
+      elevation={0}
+      sx={{ '& .MuiDrawer-paper': { width: 270 } }}
     >
       <Card
         sx={{
@@ -234,8 +236,8 @@ function AppDrawer(props) {
           }}
         />
       </Card>
-      <Box sx={{ width: 270, bgcolor: 'background.paper' }} role="presentation">
-        <List sx={{ width: 270, bgcolor: 'background.paper' }}>
+      <Box sx={{ width: 270 }} role="presentation">
+        <List sx={{ width: 270 }}>
           <UpscalingItem />
           <ListItemButton key="refresh" onClick={onRefresh}>
             <ListItemIcon>
@@ -245,11 +247,11 @@ function AppDrawer(props) {
           </ListItemButton>
         </List>
         <Divider />
-        <List sx={{ width: 270, bgcolor: 'background.paper' }}>
+        <List sx={{ width: 270 }}>
           {action_listitems.map(action_mapper(close_drawer))}
         </List>
         <Divider />
-        <List sx={{ width: 270, bgcolor: 'background.paper' }}>
+        <List sx={{ width: 270 }}>
           <ListItem>
             <ListItemIcon>
               <SecurityIcon />
@@ -257,6 +259,19 @@ function AppDrawer(props) {
             <ListItemText primary="Safe Mode" />
             <ListItemSecondaryAction>
               <Switch edge="end" onChange={toggleSafe} checked={safe} />
+            </ListItemSecondaryAction>
+          </ListItem>
+          <ListItem>
+            <ListItemIcon>
+              <DarkModeIcon />
+            </ListItemIcon>{' '}
+            <ListItemText primary="Dark Mode" />
+            <ListItemSecondaryAction>
+              <Switch
+                edge="end"
+                onChange={() => toggleDark(!dark)}
+                checked={dark}
+              />
             </ListItemSecondaryAction>
           </ListItem>
         </List>

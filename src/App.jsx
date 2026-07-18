@@ -31,7 +31,7 @@ import {
   TagUpdaterContext,
 } from './gallery'
 import ListboxComponent from './Listbox'
-import theme from './theme'
+import { getTheme } from './theme'
 import { useStorage } from './util'
 
 function compare(a, b) {
@@ -87,6 +87,9 @@ function get_tag_list(imgs) {
 }
 
 function App() {
+  const [dark, set_dark] = useStorage('dark_mode', false)
+  const current_theme = useMemo(() => getTheme(dark ? 'dark' : 'light'), [dark])
+
   const [env, set_env] = useState(null)
   const [error, set_error] = useState(null)
   const [loaded, set_loaded] = useState(false)
@@ -267,7 +270,7 @@ function App() {
 
   return (
     <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={current_theme}>
         <CssBaseline />
         <HideOnScroll>
           <AppBar position="fixed">
@@ -319,7 +322,10 @@ function App() {
                             zIndex: 7,
                             ...(banned
                               ? { bgcolor: '#e57373', color: 'inherit' }
-                              : { bgcolor: '#e3f2fd', color: '#1976d2' }),
+                              : {
+                                  bgcolor: dark ? '#1e293b' : '#e3f2fd',
+                                  color: dark ? '#90caf9' : '#1976d2',
+                                }),
                           }}
                           variant={banned ? 'filled' : 'outlined'}
                           color={banned ? 'error' : 'primary'}
@@ -364,6 +370,8 @@ function App() {
             onRefresh={refresh}
             safe={safe}
             toggleSafe={toggle_safe}
+            dark={dark}
+            toggleDark={set_dark}
           />
           <Container
             sx={{ paddingLeft: 0, paddingRight: 0, paddingBottom: 4 }}

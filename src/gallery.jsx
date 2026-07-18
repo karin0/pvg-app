@@ -10,6 +10,7 @@ import {
   Switch,
   Typography,
   useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import React, { useContext, useEffect, useMemo, useState } from 'react'
 import * as ReactDOM from 'react-dom'
@@ -18,7 +19,6 @@ import InfiniteScroll from 'react-infinite-scroll-component'
 
 import { EnvContext } from './AppDrawer'
 import { host, images_per_page } from './env'
-import theme from './theme'
 import UpscalingDialog from './UpscalingDialog'
 import { useStorage } from './util'
 
@@ -280,6 +280,7 @@ function CarouselModal(props) {
 const ModalCallbacksContext = React.createContext(undefined)
 
 function GalleryView(props) {
+  const theme = useTheme()
   const md = useMediaQuery(theme.breakpoints.up('md'))
   const cols = md ? 3 : 2
   const gap = md ? 4 : 2
