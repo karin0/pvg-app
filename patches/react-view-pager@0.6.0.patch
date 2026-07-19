@@ -1,0 +1,22 @@
+diff --git a/lib/PagerElement.js b/lib/PagerElement.js
+index d3c27802b148efdf1e68ecee1a8a57f10957b841..eddb94010abc0f06d59bd53897c390867939c795 100644
+--- a/lib/PagerElement.js
++++ b/lib/PagerElement.js
+@@ -26,8 +26,15 @@ var PagerElement = function () {
+   _createClass(PagerElement, [{
+     key: 'setSize',
+     value: function setSize(width, height) {
+-      this.width = width || this.node.offsetWidth;
+-      this.height = height || this.node.offsetHeight;
++      // offsetWidth/offsetHeight round to integers; on mobile the fullscreen
++      // view width is fractional, and integer track offsets accumulate one
++      // rounding error per view, leaking the next view's left edge into frame.
++      // getComputedStyle returns the fractional layout width and, unlike
++      // getBoundingClientRect, ignores the Modal's scale(0.9) entrance
++      // transform that is active while the pager first measures.
++      var style = window.getComputedStyle(this.node);
++      this.width = width || parseFloat(style.width);
++      this.height = height || parseFloat(style.height);
+     }
+   }, {
+     key: 'setPosition',
