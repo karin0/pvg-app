@@ -1,0 +1,2 @@
+patchedDependencies:
+  react-view-pager@0.6.0: patches/react-view-pager@0.6.0.patch
