@@ -368,7 +368,7 @@ const GalleryView = React.memo(function GalleryView(props) {
             // meta.pc indicates the illust's real page count where we got
             // fewer pages than exist. Paging behavior follows the pages
             // actually served.
-            const pc = pages ? (img.meta?.pc ?? pages.length) : 0
+            const pc = img.meta?.pc ?? img.pc
             const image = (
               <img
                 src={host + img.ori}
@@ -395,15 +395,18 @@ const GalleryView = React.memo(function GalleryView(props) {
                 }}
               />
             )
-            // A bookmark covers the whole illust, so the heart rides the first
-            // page alone; Expanded lays out every page as its own tile. Reading
-            // `/env` rather than the bookmark context keeps a state change from
-            // re-rendering this memoized component.
-            const heart = env?.bookmark_url && img.ind === 0
+            // Illust-level marks ride the illust's first page, which is the
+            // whole tile outside Expanded and one tile among its pages within
+            // it: the page count belongs to the illust, and so does a bookmark.
+            // Reading `/env` rather than the bookmark context keeps a state
+            // change from re-rendering this memoized component.
+            const first = img.ind === 0
+            const count = first && pc > 1
+            const heart = first && Boolean(env?.bookmark_url)
             // actionIcon flows its children inline, which wraps two chips
             // apart in a narrow column; the flex row pins them side by side.
             // The heart sits at its right end, the tile's bottom-right corner.
-            const icons = (score != null || pc > 1 || heart) && (
+            const icons = (score != null || count || heart) && (
               <Box
                 sx={{
                   display: 'flex',
@@ -413,7 +416,7 @@ const GalleryView = React.memo(function GalleryView(props) {
                 }}
               >
                 {score != null && <ScoreChip score={score} />}
-                {pc > 1 && <Chip label={pc} color="info" size="small" />}
+                {count && <Chip label={pc} color="info" size="small" />}
                 {heart && <BookmarkButton pid={img.pid} />}
               </Box>
             )

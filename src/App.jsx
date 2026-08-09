@@ -236,6 +236,9 @@ function App() {
               return {
                 pid,
                 ind,
+                // the illust's served page count, carried by each of its pages
+                // so a page standing on its own still knows it
+                pc: raw_pages.length,
                 title,
                 author,
                 aid,
