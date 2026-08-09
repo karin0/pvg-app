@@ -8,6 +8,7 @@ import '@fontsource/roboto/700.css'
 
 import MenuIcon from '@mui/icons-material/Menu'
 import {
+  Alert,
   AppBar,
   Box,
   Chip,
@@ -15,6 +16,7 @@ import {
   CssBaseline,
   IconButton,
   Slide,
+  Snackbar,
   TextField,
   Toolbar,
   useScrollTrigger,
@@ -26,6 +28,7 @@ import AppDrawer from './AppDrawer'
 import { host } from './env'
 import FloatingControls from './FloatingControls'
 import {
+  BookmarkContext,
   EnvContext,
   FilterTagsContext,
   PvgGallery,
@@ -120,6 +123,43 @@ function App() {
 
   const tags_curr_map = new Map()
   for (let i = 0; i < tags_curr.length; ++i) tags_curr_map.set(tags_curr[i], i)
+
+  // Bookmarking goes to whichever backend `/env` names, one illust per POST.
+  // The outcome is session state, as `/select` carries no bookmark status. A
+  // rejection carries the reason the source platform gave (a rate limit, an
+  // expired token), which the failing heart and the snackbar both show.
+  const [bookmarks, set_bookmarks] = useState(() => new Map())
+  const [bookmark_failure, set_bookmark_failure] = useState(null)
+  const bookmark_url = env?.bookmark_url
+  const bookmark_ctx = useMemo(() => {
+    if (!bookmark_url) return null
+    const set_status = (pid, status) =>
+      set_bookmarks((m) => new Map(m).set(pid, status))
+    const fail = (pid, message) => {
+      console.error('bookmark', pid, message)
+      set_status(pid, { state: 'error', message })
+      set_bookmark_failure({ pid, message })
+    }
+    const add = (pid) => {
+      set_status(pid, { state: 'pending' })
+      fetch(bookmark_url, {
+        method: 'POST',
+        body: JSON.stringify({ id: pid }),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+      }).then(
+        async (res) => {
+          if (res.ok) {
+            set_status(pid, { state: 'done' })
+          } else {
+            const body = (await res.text()).trim()
+            fail(pid, body || `HTTP ${res.status}`)
+          }
+        },
+        (error) => fail(pid, error.message),
+      )
+    }
+    return { states: bookmarks, add }
+  }, [bookmark_url, bookmarks])
 
   const images = useMemo(() => {
     const imgs = resp
@@ -412,20 +452,22 @@ function App() {
             ) : loaded && env ? (
               // env carries the illust/author URL prefixes the gallery links
               // use; gating on it avoids a first paint with the Pixiv fallbacks.
-              <TagUpdaterContext.Provider value={toggle_tag}>
-                <FilterTagsContext.Provider value={tags_curr_map}>
-                  <PvgGallery
-                    images={images}
-                    locating_id={locating_id}
-                    resorted={resorted}
-                    reversed={reversed}
-                    grouped={grouped}
-                    expanded={expanded}
-                    show_title={show_title}
-                    goto_link={goto_link}
-                  />
-                </FilterTagsContext.Provider>
-              </TagUpdaterContext.Provider>
+              <BookmarkContext.Provider value={bookmark_ctx}>
+                <TagUpdaterContext.Provider value={toggle_tag}>
+                  <FilterTagsContext.Provider value={tags_curr_map}>
+                    <PvgGallery
+                      images={images}
+                      locating_id={locating_id}
+                      resorted={resorted}
+                      reversed={reversed}
+                      grouped={grouped}
+                      expanded={expanded}
+                      show_title={show_title}
+                      goto_link={goto_link}
+                    />
+                  </FilterTagsContext.Provider>
+                </TagUpdaterContext.Provider>
+              </BookmarkContext.Provider>
             ) : (
               'Loading..'
             )}
@@ -435,6 +477,22 @@ function App() {
           switches={gallery_switches}
           caption={loaded && env ? stats : null}
         />
+        <Snackbar
+          open={bookmark_failure !== null}
+          autoHideDuration={15000}
+          onClose={() => set_bookmark_failure(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        >
+          <Alert
+            severity="error"
+            variant="filled"
+            onClose={() => set_bookmark_failure(null)}
+            sx={{ maxWidth: 520, wordBreak: 'break-word' }}
+          >
+            {bookmark_failure &&
+              `Bookmarking ${bookmark_failure.pid} failed: ${bookmark_failure.message}`}
+          </Alert>
+        </Snackbar>
       </ThemeProvider>
     </StyledEngineProvider>
   )

@@ -1,3 +1,5 @@
+import FavoriteIcon from '@mui/icons-material/Favorite'
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
 import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan'
 import {
   Box,
@@ -29,6 +31,9 @@ import UpscalingDialog from './UpscalingDialog'
 
 const TagUpdaterContext = React.createContext()
 const FilterTagsContext = React.createContext()
+// `{states: Map(pid -> {state: 'pending' | 'done' | 'error', message}),
+// add(pid)}`, or null when `/env` names no bookmark endpoint.
+const BookmarkContext = React.createContext(null)
 
 function illust_url(img, env) {
   return (
@@ -100,6 +105,34 @@ function UpscalingButton(props) {
         on_close={close_dialog}
       />
     </>
+  )
+}
+
+// Only a posted-and-accepted bookmark fills the heart. A rejected one turns it
+// amber and keeps the outline, with the backend's message on hover and in the
+// snackbar; the click stays live, and reposting an illust is harmless.
+const HEART_COLOR = { done: 'error.main', error: 'warning.main' }
+
+function BookmarkButton(props) {
+  const bookmarks = useContext(BookmarkContext)
+  if (!bookmarks) return null
+
+  const { pid } = props
+  const status = bookmarks.states.get(pid)
+  const state = status?.state
+  return (
+    <IconButton
+      size="small"
+      title={status?.message}
+      disabled={state === 'pending'}
+      onClick={() => bookmarks.add(pid)}
+      sx={{
+        p: '4px',
+        color: HEART_COLOR[state] ?? 'rgba(255, 255, 255, 0.85)',
+      }}
+    >
+      {state === 'done' ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+    </IconButton>
   )
 }
 
@@ -362,9 +395,15 @@ const GalleryView = React.memo(function GalleryView(props) {
                 }}
               />
             )
+            // A bookmark covers the whole illust, so the heart rides the first
+            // page alone; Expanded lays out every page as its own tile. Reading
+            // `/env` rather than the bookmark context keeps a state change from
+            // re-rendering this memoized component.
+            const heart = env?.bookmark_url && img.ind === 0
             // actionIcon flows its children inline, which wraps two chips
             // apart in a narrow column; the flex row pins them side by side.
-            const icons = (score != null || pc > 1) && (
+            // The heart sits at its right end, the tile's bottom-right corner.
+            const icons = (score != null || pc > 1 || heart) && (
               <Box
                 sx={{
                   display: 'flex',
@@ -375,6 +414,7 @@ const GalleryView = React.memo(function GalleryView(props) {
               >
                 {score != null && <ScoreChip score={score} />}
                 {pc > 1 && <Chip label={pc} color="info" size="small" />}
+                {heart && <BookmarkButton pid={img.pid} />}
               </Box>
             )
             return (
@@ -695,4 +735,10 @@ function PvgGallery(props) {
   )
 }
 
-export { EnvContext, FilterTagsContext, PvgGallery, TagUpdaterContext }
+export {
+  BookmarkContext,
+  EnvContext,
+  FilterTagsContext,
+  PvgGallery,
+  TagUpdaterContext,
+}
