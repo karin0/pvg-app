@@ -10,13 +10,21 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import * as ReactDOM from 'react-dom'
 import Carousel, { Modal, ModalGateway } from 'react-images'
-import InfiniteScroll from 'react-infinite-scroll-component'
 
 import { EnvContext } from './AppDrawer'
 import { host, images_per_page } from './env'
+import ProgressRail from './ProgressRail'
 import UpscalingDialog from './UpscalingDialog'
 
 const TagUpdaterContext = React.createContext()
@@ -276,7 +284,10 @@ function CarouselModal(props) {
 
 const ModalCallbacksContext = React.createContext(undefined)
 
-function GalleryView(props) {
+// The pagination re-creates an element for every mounted page on each range
+// change. PvgGallery holds each `images` array identity stable, so this memo
+// turns those into bailouts.
+const GalleryView = React.memo(function GalleryView(props) {
   const theme = useTheme()
   const md = useMediaQuery(theme.breakpoints.up('md'))
   const cols = md ? 3 : 2
@@ -339,7 +350,16 @@ function GalleryView(props) {
                 alt={img.title}
                 width={img.w}
                 height={img.h}
-                style={{ display: 'block', width: '100%', height: 'auto' }}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  height: 'auto',
+                  // Pages the backend gave no dimensions for reserve the
+                  // square that the column packing already assumed for them.
+                  // The `auto` keyword lets the real ratio take the box once
+                  // the image decodes.
+                  aspectRatio: img.w && img.h ? undefined : 'auto 1 / 1',
+                }}
               />
             )
             // actionIcon flows its children inline, which wraps two chips
@@ -384,47 +404,200 @@ function GalleryView(props) {
       ))}
     </Box>
   )
+})
+
+// Height of the fixed AppBar (its dense Toolbar is 48px) plus a gap. Content
+// starts at this line and scroll targets park on it, so seeking to the first
+// item lands at the top of the document.
+const HEADER_OFFSET = 64
+
+function doc_top(el) {
+  return el.getBoundingClientRect().top + window.scrollY
 }
 
+function viewport_top(el) {
+  return el.getBoundingClientRect().top
+}
+
+// How far outside the viewport a sentinel starts loading its next page.
+const PREFETCH_MARGIN = '600px'
+
+// Renders a contiguous page range [start, end), grown a page at a time from
+// either end by whichever sentinel comes into view. Seeking re-anchors the
+// range on the target page, so a jump costs one page no matter how far it goes
+// and the pages behind it come back by scrolling up.
 function GalleryPagination(props) {
-  const [views, set_views] = useState([])
-  const tot = props.pages.length
-  const off = views.length
-  const has_more = off < tot
-  if (views.length === 0 && has_more) {
-    set_views([<GalleryView key={0} images={props.pages[0]} />])
-  }
+  const { pages, initial_index } = props
+  const page_els = useRef(new Map())
+  const pending = useRef(initial_index || null)
+  // Viewport position a page held before a prepend pushed it down. Viewport
+  // coordinates make the correction a no-op wherever the browser's own scroll
+  // anchoring already did the work.
+  const anchor = useRef(null)
+  const top_edge = useRef(null)
+  const bottom_edge = useRef(null)
+
+  const total = useMemo(() => pages.reduce((a, p) => a + p.length, 0), [pages])
+
+  const first = Math.floor(initial_index / images_per_page)
+  const [range, set_range] = useState([
+    first,
+    Math.min(first + 1, pages.length),
+  ])
+  const [start, end] = range
+  const range_ref = useRef(range)
 
   const [now_pages, set_now_pages] = useState([])
   const [now_index, set_now_index] = useState(-1)
 
-  function show_images(images, index) {
+  // One identity for the component's lifetime, so a range change leaves every
+  // mounted GalleryView's memo intact.
+  const show_images = useCallback((images, index) => {
     set_now_pages(images)
     set_now_index(index)
+  }, [])
+
+  // Item index of the page-relative fraction at document coordinate y. Within a
+  // page the mapping is linear, so its resolution is one page; masonry columns
+  // make anything finer meaningless anyway.
+  //
+  // The range comes from a ref written in the layout effect below, so a scroll
+  // event landing between a commit and the next passive effect still reads the
+  // pages that are mounted.
+  const measure = useCallback(
+    (y) => {
+      const [start, end] = range_ref.current
+      let lo = start
+      let hi = end - 1
+      while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1
+        if (doc_top(page_els.current.get(mid)) <= y) lo = mid
+        else hi = mid - 1
+      }
+      const el = page_els.current.get(lo)
+      const frac = Math.max(0, Math.min(1, (y - doc_top(el)) / el.offsetHeight))
+      return Math.max(
+        start * images_per_page,
+        Math.min(total - 1, lo * images_per_page + frac * pages[lo].length),
+      )
+    },
+    [pages, total],
+  )
+
+  // Returns the requested position. The browser clamps it to the document when
+  // too little is mounted below.
+  const scroll_to = (index) => {
+    const p = Math.floor(index / images_per_page)
+    const el = page_els.current.get(p)
+    const frac = (index - p * images_per_page) / pages[p].length
+    const y = doc_top(el) + frac * el.offsetHeight - HEADER_OFFSET
+    window.scrollTo(0, y)
+    return y
   }
+
+  // A seek into the tail of a page can ask for a position past the document's
+  // current height. The request stands until the sentinel below has appended
+  // enough for it to land.
+  const settle = () => {
+    const index = pending.current
+    if (index === null) return
+    const y = scroll_to(index)
+    if (window.scrollY >= y - 1 || end >= pages.length) pending.current = null
+  }
+
+  const seek = (index) => {
+    const p = Math.floor(index / images_per_page)
+    pending.current = index
+    if (p >= start && p < end) settle()
+    else set_range([p, p + 1])
+  }
+
+  const has_top = start > 0
+  const has_bottom = end < pages.length
+
+  // The range comes from the ref. An observation can reach a callback whose
+  // effect React has committed past but has yet to tear down, and by then the
+  // page it would anchor on is unmounted.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: has_top and has_bottom gate whether each sentinel node exists, so the observer is rebuilt when either flips even though the callback reads neither
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue
+          if (e.target === top_edge.current) {
+            const el = page_els.current.get(range_ref.current[0])
+            anchor.current = { el, top: viewport_top(el) }
+            set_range(([s, x]) => [Math.max(0, s - 1), x])
+          } else {
+            set_range(([s, x]) => [s, Math.min(x + 1, pages.length)])
+          }
+        }
+      },
+      { rootMargin: PREFETCH_MARGIN },
+    )
+    if (top_edge.current) observer.observe(top_edge.current)
+    if (bottom_edge.current) observer.observe(bottom_edge.current)
+    return () => observer.disconnect()
+  }, [has_top, has_bottom, pages.length])
+
+  useLayoutEffect(() => {
+    range_ref.current = range
+    const a = anchor.current
+    if (a !== null) {
+      anchor.current = null
+      // A seek can supersede the prepend this measurement belonged to and
+      // unmount the page it anchored on.
+      if (a.el.isConnected) {
+        window.scrollBy(0, viewport_top(a.el) - a.top)
+      }
+    }
+    settle()
+  })
 
   return (
     <>
       <ModalCallbacksContext.Provider value={show_images}>
-        <InfiniteScroll
-          style={{ display: 'flex', flexDirection: 'column', rowGap: 16 }}
-          dataLength={off}
-          next={() => {
-            set_views([
-              ...views,
-              <GalleryView key={off} images={props.pages[off]} />,
-            ])
-          }}
-          hasMore={has_more}
-          loader={
-            <div className="loader" key={-1}>
+        <Box>
+          {has_top && (
+            <div className="loader" ref={top_edge}>
               Loading ...
             </div>
-          }
-        >
-          {views}
-        </InfiniteScroll>
+          )}
+          <Box
+            sx={{ display: 'flex', flexDirection: 'column', rowGap: '16px' }}
+          >
+            {pages.slice(start, end).map((images, k) => (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: start + k is the absolute page number, which identifies the chunk no matter where the range begins
+                key={start + k}
+                ref={(el) => {
+                  if (el) page_els.current.set(start + k, el)
+                  else page_els.current.delete(start + k)
+                }}
+              >
+                <GalleryView images={images} />
+              </div>
+            ))}
+          </Box>
+          {has_bottom && (
+            <div className="loader" ref={bottom_edge}>
+              Loading ...
+            </div>
+          )}
+        </Box>
       </ModalCallbacksContext.Provider>
+      {total > images_per_page && now_index < 0 && (
+        <ProgressRail
+          total={total}
+          loaded={[
+            start * images_per_page,
+            Math.min(total, end * images_per_page),
+          ]}
+          measure={measure}
+          onSeek={seek}
+          header_offset={HEADER_OFFSET}
+        />
+      )}
       <CarouselModal
         index={now_index}
         setIndex={set_now_index}
@@ -435,7 +608,8 @@ function GalleryPagination(props) {
 }
 
 function PvgGallery(props) {
-  const { resorted, reversed, expanded, show_title, goto_link } = props
+  const { resorted, reversed, expanded, show_title, goto_link, locating_id } =
+    props
 
   const illusts = props.images
   const images = useMemo(() => {
@@ -452,38 +626,49 @@ function PvgGallery(props) {
     }))
   }, [illusts, resorted, reversed, expanded])
 
-  const pages = []
-  let page = [],
-    offset = 0,
-    ha = 0,
-    hs = 0,
-    cnt = 0
+  // The page array identity must survive re-renders: GalleryPagination hands
+  // each chunk straight to a memoized GalleryView.
+  const layout = useMemo(() => {
+    const pages = []
+    let page = [],
+      initial_index = 0,
+      ha = 0,
+      hs = 0,
+      cnt = 0
 
-  for (const img of images) {
-    ++cnt
-    ha ^= img.pid + (img.w || 0) + cnt + hs
-    hs += img.pid + (img.h || 0) + ((x) => (x >= 0 ? x : -2 * x))(cnt ^ ha)
+    for (const img of images) {
+      ++cnt
+      ha ^= img.pid + (img.w || 0) + cnt + hs
+      hs += img.pid + (img.h || 0) + ((x) => (x >= 0 ? x : -2 * x))(cnt ^ ha)
 
-    if (img.iid === props.locating_id) offset = pages.length
+      if (img.iid === locating_id) initial_index = cnt - 1
 
-    page.push(img)
+      page.push(img)
 
-    if (page.length >= images_per_page) {
-      pages.push(page)
-      page = []
+      if (page.length >= images_per_page) {
+        pages.push(page)
+        page = []
+      }
     }
-  }
-  if (page.length) {
-    pages.push(page)
-  }
+    if (page.length) {
+      pages.push(page)
+    }
+
+    return { pages, initial_index, key: `${ha},${hs},${initial_index}` }
+  }, [images, locating_id])
+
+  const options = useMemo(
+    () => ({ show_title, goto_link }),
+    [show_title, goto_link],
+  )
 
   return (
-    <Box sx={{ pt: 8 }}>
-      <GalleryOptionsContext.Provider value={{ show_title, goto_link }}>
+    <Box sx={{ pt: `${HEADER_OFFSET}px` }}>
+      <GalleryOptionsContext.Provider value={options}>
         <GalleryPagination
-          pages={pages}
-          default_offset={offset}
-          key={[ha, hs]}
+          pages={layout.pages}
+          initial_index={layout.initial_index}
+          key={layout.key}
         />
       </GalleryOptionsContext.Provider>
     </Box>

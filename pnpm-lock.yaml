@@ -38,9 +38,6 @@ importers:
       react-images:
         specifier: 1.2.0-beta.7
         version: 1.2.0-beta.7(@types/react@19.2.7)(prop-types@15.8.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react-infinite-scroll-component:
-        specifier: ^7.2.1
-        version: 7.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-window:
         specifier: ^2.2.7
         version: 2.2.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -871,13 +868,6 @@ packages:
       prop-types: ^15.7.2
       react: ^16.2.0 || ^17.0.0
       react-dom: ^16.2.0 || ^17.0.0
-
-  react-infinite-scroll-component@7.2.1:
-    resolution: {integrity: sha512-yPuEf6VHBJXFt+YXDxjlnAuhorUwiA2cKURx/P6a7WW3k+TvwY/mbx7KP1rQ1hxGzDcwreczRyLIv6eSd1sFIw==}
-    engines: {node: '>=20.0.0'}
-    peerDependencies:
-      react: '>=17'
-      react-dom: '>=17'
 
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
@@ -1843,11 +1833,6 @@ snapshots:
       react-view-pager: 0.6.0(patch_hash=07b1f892d6f0774ac05b4f22a576dafda9bb1a2161df48cbbf48616aaff1bdd5)(prop-types@15.8.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     transitivePeerDependencies:
       - '@types/react'
-
-  react-infinite-scroll-component@7.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
-    dependencies:
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
 
   react-is@16.13.1: {}
 

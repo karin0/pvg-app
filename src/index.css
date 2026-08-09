@@ -1,3 +1,14 @@
 .react-images__view img {
   max-height: 100vh;
 }
+
+/* The gallery's own rail reports position over the whole result set, while the
+   document scrollbar measures only the page range currently mounted, which
+   restarts at whatever page a jump anchored on. */
+html {
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
