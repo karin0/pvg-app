@@ -113,6 +113,7 @@ function App() {
   }
   const [resorted, set_resorted] = useSwitch('resorted')
   const [reversed, set_reversed] = useSwitch('reversed')
+  const [grouped, set_grouped] = useSwitch('grouped')
   const [expanded, set_expanded] = useSwitch('expanded')
   const [show_title, set_show_title] = useSwitch('show_title')
   const [goto_link, set_goto_link] = useSwitch('goto_link')
@@ -144,6 +145,7 @@ function App() {
   const gallery_switches = [
     { label: 'Sort by Date', checked: resorted, setChecked: set_resorted },
     { label: 'Reversed', checked: reversed, setChecked: set_reversed },
+    { label: 'Group by User', checked: grouped, setChecked: set_grouped },
     { label: 'Expanded', checked: expanded, setChecked: set_expanded },
     { label: 'Show Titles', checked: show_title, setChecked: set_show_title },
     { label: 'Go to Link', checked: goto_link, setChecked: set_goto_link },
@@ -417,6 +419,7 @@ function App() {
                     locating_id={locating_id}
                     resorted={resorted}
                     reversed={reversed}
+                    grouped={grouped}
                     expanded={expanded}
                     show_title={show_title}
                     goto_link={goto_link}

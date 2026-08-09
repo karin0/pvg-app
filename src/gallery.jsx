@@ -607,9 +607,28 @@ function GalleryPagination(props) {
   )
 }
 
+// Each author takes the position of their first work in the incoming order, so
+// a backend that ranks the stream keeps deciding where every author lands.
+function group_by_author(illusts) {
+  const groups = new Map()
+  for (const img of illusts) {
+    const g = groups.get(img.aid)
+    if (g) g.push(img)
+    else groups.set(img.aid, [img])
+  }
+  return Array.from(groups.values()).flat()
+}
+
 function PvgGallery(props) {
-  const { resorted, reversed, expanded, show_title, goto_link, locating_id } =
-    props
+  const {
+    resorted,
+    reversed,
+    grouped,
+    expanded,
+    show_title,
+    goto_link,
+    locating_id,
+  } = props
 
   const illusts = props.images
   const images = useMemo(() => {
@@ -619,12 +638,13 @@ function PvgGallery(props) {
       if (resorted) imgs.sort((a, b) => b.pid - a.pid)
       if (reversed) imgs.reverse()
     }
+    if (grouped) imgs = group_by_author(imgs)
     if (expanded) return imgs.flatMap((o) => o.pages)
     return imgs.map((o) => ({
       ...o.pages[0],
       pages: o.pages,
     }))
-  }, [illusts, resorted, reversed, expanded])
+  }, [illusts, resorted, reversed, grouped, expanded])
 
   // The page array identity must survive re-renders: GalleryPagination hands
   // each chunk straight to a memoized GalleryView.
