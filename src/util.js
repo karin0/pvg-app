@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
-function useStorage(key, def, map_initial_value) {
+import { host } from './env'
+
+function useSharedStorage(key, def, map_initial_value) {
   const [v, set_v] = useState(() => {
     const v = localStorage.getItem(key)
     if (v === null) return typeof def === 'function' ? def() : def
@@ -11,13 +13,19 @@ function useStorage(key, def, map_initial_value) {
     }
     return r
   })
-  return [
-    v,
+  const set = useCallback(
     (n) => {
-      localStorage.setItem(key, JSON.stringify(n))
-      set_v(n)
+      set_v((prev) => {
+        const next = typeof n === 'function' ? n(prev) : n
+        if (next !== prev) localStorage.setItem(key, JSON.stringify(next))
+        return next
+      })
     },
-  ]
+    [key],
+  )
+  return [v, set]
 }
 
-export { useStorage }
+const useStorage = (key, def) => useSharedStorage(`${key}:${host}`, def)
+
+export { useSharedStorage, useStorage }

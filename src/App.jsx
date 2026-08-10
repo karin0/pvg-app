@@ -36,7 +36,7 @@ import {
 } from './gallery'
 import ListboxComponent from './Listbox'
 import { getTheme } from './theme'
-import { useStorage } from './util'
+import { useSharedStorage, useStorage } from './util'
 
 function compare(a, b) {
   if (a < b) return -1
@@ -69,6 +69,8 @@ const reg_bad = new RegExp(
   ),
 )
 
+const BOOKMARK_DONE = { state: 'done' }
+
 function get_tag_list(imgs) {
   const s = new Map()
   let last_pid
@@ -91,7 +93,7 @@ function get_tag_list(imgs) {
 }
 
 function App() {
-  const [dark, set_dark] = useStorage('dark_mode', false)
+  const [dark, set_dark] = useSharedStorage('dark_mode', false)
   const current_theme = useMemo(() => getTheme(dark ? 'dark' : 'light'), [dark])
 
   const [env, set_env] = useState(null)
@@ -102,14 +104,15 @@ function App() {
   const [tags_banned, set_tags_banned] = useStorage('tags_banned', [])
   const [locating_id, set_locating_id] = useState(-1)
   const [drawer_open, set_drawer_open] = useState(false)
-  const [safe, set_safe] = useStorage('safe', false, (v) => {
+  const [safe, set_safe] = useSharedStorage('safe', false, (v) => {
     if (!v && window.location.search.includes('safe=1')) return true
     return v
   })
 
-  // A switch untouched by the user (stored value null) follows the backend's
-  // declared default, which may arrive after mount; deriving the effective
-  // value each render lets a late `env` apply without freezing a stale default.
+  // A switch the user never touched against this backend (stored value null)
+  // follows the default it declares, which may arrive after mount; deriving the
+  // effective value each render lets a late `env` apply without freezing a
+  // stale default.
   const useSwitch = (key) => {
     const [v, set_v] = useStorage(key, null)
     return [v ?? (env?.switch_defaults ?? []).includes(key), set_v]
@@ -124,32 +127,44 @@ function App() {
   const tags_curr_map = new Map()
   for (let i = 0; i < tags_curr.length; ++i) tags_curr_map.set(tags_curr[i], i)
 
-  // Bookmarking goes to whichever backend `/env` names, one illust per POST.
-  // The outcome is session state, as `/select` carries no bookmark status. A
+  // Bookmarking goes to whichever backend `/env` names, one illust per POST. A
+  // success outlives the page, since `/select` carries no bookmark status and a
+  // round can span days; a pending or failed click belongs to this session. A
   // rejection carries the reason the source platform gave (a rate limit, an
   // expired token), which the failing heart and the snackbar both show.
-  const [bookmarks, set_bookmarks] = useState(() => new Map())
+  const [bookmarked, set_bookmarked] = useStorage('bookmarked', [])
+  const [bookmark_tried, set_bookmark_tried] = useState(() => new Map())
   const [bookmark_failure, set_bookmark_failure] = useState(null)
   const bookmark_url = env?.bookmark_url
   const bookmark_ctx = useMemo(() => {
     if (!bookmark_url) return null
-    const set_status = (pid, status) =>
-      set_bookmarks((m) => new Map(m).set(pid, status))
+    const states = new Map(bookmark_tried)
+    for (const pid of bookmarked) states.set(pid, BOOKMARK_DONE)
     const fail = (pid, message) => {
       console.error('bookmark', pid, message)
-      set_status(pid, { state: 'error', message })
+      set_bookmark_tried((m) =>
+        new Map(m).set(pid, { state: 'error', message }),
+      )
       set_bookmark_failure({ pid, message })
     }
     const add = (pid) => {
-      set_status(pid, { state: 'pending' })
+      set_bookmark_tried((m) => new Map(m).set(pid, { state: 'pending' }))
       fetch(bookmark_url, {
         method: 'POST',
         body: JSON.stringify({ id: pid }),
         headers: new Headers({ 'Content-Type': 'application/json' }),
+        // A pending heart is disabled, so a request that never settles would
+        // leave the illust unbookmarkable for the rest of the session.
+        signal: AbortSignal.timeout(30000),
       }).then(
         async (res) => {
           if (res.ok) {
-            set_status(pid, { state: 'done' })
+            set_bookmarked((a) => (a.includes(pid) ? a : a.concat([pid])))
+            set_bookmark_tried((m) => {
+              const n = new Map(m)
+              n.delete(pid)
+              return n
+            })
           } else {
             const body = (await res.text()).trim()
             fail(pid, body || `HTTP ${res.status}`)
@@ -158,8 +173,8 @@ function App() {
         (error) => fail(pid, error.message),
       )
     }
-    return { states: bookmarks, add }
-  }, [bookmark_url, bookmarks])
+    return { states, add }
+  }, [bookmark_url, bookmarked, bookmark_tried, set_bookmarked])
 
   const images = useMemo(() => {
     const imgs = resp
@@ -269,6 +284,12 @@ function App() {
           set_loaded(true)
           set_error(null)
           set_resp(resp)
+          // A heart can only be shown for an illust the backend still returns.
+          const alive = new Set(resp.map((o) => o.pid))
+          set_bookmarked((a) => {
+            const kept = a.filter((pid) => alive.has(pid))
+            return kept.length === a.length ? a : kept
+          })
         },
         (error) => {
           set_loaded(true)
@@ -320,8 +341,12 @@ function App() {
     set_safe(!safe)
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: locating_id gates the refetch — Refresh and re-locate re-run the query by changing it
-  useEffect(update, [tags_curr, tags_banned, locating_id])
+  // The first query waits for `env`, which may still add the backend's
+  // suggested filters to it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: locating_id gates the refetch - Refresh and re-locate re-run the query by changing it
+  useEffect(() => {
+    if (env) update()
+  }, [env, tags_curr, tags_banned, locating_id])
 
   useEffect(() => {
     fetch(host + 'env', {
@@ -332,6 +357,10 @@ function App() {
       .then(
         (res) => {
           console.log('env:', res)
+          // A backend may suggest filters for a client holding none of its own.
+          if (res.filter_defaults?.length) {
+            set_tags_curr((curr) => (curr.length ? curr : res.filter_defaults))
+          }
           set_env(res)
         },
         (error) => {
@@ -339,7 +368,7 @@ function App() {
           set_error(error)
         },
       )
-  }, [])
+  }, [set_tags_curr])
 
   return (
     <StyledEngineProvider injectFirst>
