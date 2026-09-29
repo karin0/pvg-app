@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import './index.css'
 
 import '@fontsource/roboto/300.css'
@@ -104,6 +104,7 @@ function App() {
   const [tags_curr, set_tags_curr] = useStorage('tags_curr', [])
   const [tags_banned, set_tags_banned] = useStorage('tags_banned', [])
   const [locating_id, set_locating_id] = useState(-1)
+  const [refreshes, refresh_query] = useReducer((n) => n + 1, 0)
   const [drawer_open, set_drawer_open] = useState(false)
   const [safe, set_safe] = useSharedStorage('safe', false, (v) => {
     if (!v && window.location.search.includes('safe=1')) return true
@@ -384,6 +385,7 @@ function App() {
 
   const refresh = () => {
     set_locating_id(-1)
+    refresh_query()
     close_drawer()
   }
 
@@ -394,10 +396,10 @@ function App() {
 
   // The first query waits for `env`, which may still add the backend's
   // suggested filters to it.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: locating_id gates the refetch - Refresh and re-locate re-run the query by changing it
+  // biome-ignore lint/correctness/useExhaustiveDependencies: locating_id and refreshes gate the refetch - re-locate and Refresh re-run the query by changing them
   useEffect(() => {
     if (env) update()
-  }, [env, tags_curr, tags_banned, locating_id])
+  }, [env, tags_curr, tags_banned, locating_id, refreshes])
 
   useEffect(() => {
     fetch(host + 'env', {

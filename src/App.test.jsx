@@ -169,3 +169,16 @@ describe('Freeze Order', () => {
     expect(confirm).not.toHaveBeenCalled()
   })
 })
+
+describe('Refresh', () => {
+  it('re-runs the query', async () => {
+    backend.pids = [1, 2]
+    await load()
+    backend.pids = [3, 1, 2]
+    fireEvent.click(screen.getByTestId('MenuIcon'))
+    fireEvent.click(await screen.findByText('Refresh'))
+    await waitFor(() => expect(backend.selects.length).toBe(2))
+    // Frozen by the default switch, so the new illust stays out.
+    await waitFor(() => expect(gallery_order()).toEqual([1, 2]))
+  })
+})
