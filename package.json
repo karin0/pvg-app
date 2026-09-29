@@ -19,11 +19,16 @@
     "start": "vite",
     "build": "vite build",
     "lint": "biome check --error-on-warnings .",
+    "test": "vitest run",
     "fmt": "biome check --write ."
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.4",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
     "@vitejs/plugin-react": "^6.0.5",
-    "vite": "^8.2.1"
+    "jsdom": "^30.0.1",
+    "vite": "^8.2.1",
+    "vitest": "^5.0.0"
   }
 }
