@@ -1,3 +1,4 @@
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import FavoriteIcon from '@mui/icons-material/Favorite'
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
 import SettingsOverscanIcon from '@mui/icons-material/SettingsOverscan'
@@ -60,6 +61,18 @@ function ScoreChip(props) {
         backgroundColor: `hsla(${hue}, ${sat}%, 40%, 0.65)`,
         color: '#fff',
       }}
+    />
+  )
+}
+
+function AiChip(props) {
+  return (
+    <Chip
+      icon={<AutoAwesomeIcon />}
+      label="AI"
+      size="small"
+      color="warning"
+      style={props.style}
     />
   )
 }
@@ -267,6 +280,9 @@ function ImageCaption(props) {
                 style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
               />
             )}
+            {img.meta?.ai && (
+              <AiChip style={{ marginRight: '0.5em', marginBottom: '0.3em' }} />
+            )}
             <Chip
               style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
               label={img.pid}
@@ -402,11 +418,12 @@ const GalleryView = React.memo(function GalleryView(props) {
             // change from re-rendering this memoized component.
             const first = img.ind === 0
             const count = first && pc > 1
+            const ai = first && Boolean(img.meta?.ai)
             const heart = first && Boolean(env?.bookmark_url)
             // actionIcon flows its children inline, which wraps two chips
             // apart in a narrow column; the flex row pins them side by side.
             // The heart sits at its right end, the tile's bottom-right corner.
-            const icons = (score != null || count || heart) && (
+            const icons = (score != null || count || ai || heart) && (
               <Box
                 sx={{
                   display: 'flex',
@@ -416,6 +433,7 @@ const GalleryView = React.memo(function GalleryView(props) {
                 }}
               >
                 {score != null && <ScoreChip score={score} />}
+                {ai && <AiChip />}
                 {count && <Chip label={pc} color="info" size="small" />}
                 {heart && <BookmarkButton pid={img.pid} />}
               </Box>
