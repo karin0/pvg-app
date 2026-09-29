@@ -99,7 +99,8 @@ function App() {
   const [env, set_env] = useState(null)
   const [error, set_error] = useState(null)
   const [loaded, set_loaded] = useState(false)
-  const [resp, set_resp] = useState([])
+  // The backend's latest result, tagged with the filters it answers.
+  const [result, set_result] = useState(null)
   const [tags_curr, set_tags_curr] = useStorage('tags_curr', [])
   const [tags_banned, set_tags_banned] = useStorage('tags_banned', [])
   const [locating_id, set_locating_id] = useState(-1)
@@ -123,6 +124,21 @@ function App() {
   const [expanded, set_expanded] = useSwitch('expanded')
   const [show_title, set_show_title] = useSwitch('show_title')
   const [goto_link, set_goto_link] = useSwitch('goto_link')
+  const [frozen, set_frozen] = useSwitch('frozen')
+
+  // Freeze Order pins the membership and order of the first non-empty result
+  // for the current filters, so a round read across reloads keeps its
+  // positions while the item data stays fresh. An empty result stays unpinned,
+  // since pinning it would hide every later arrival.
+  const [snapshot, set_snapshot] = useStorage('snapshot', null)
+  useEffect(() => {
+    if (frozen && result?.items.length && result.key !== snapshot?.key)
+      set_snapshot({ key: result.key, pids: result.items.map((o) => o.pid) })
+  }, [frozen, result, snapshot, set_snapshot])
+
+  const confirm_discard = () =>
+    !(frozen && snapshot) ||
+    window.confirm('This discards the frozen order. Continue?')
 
   const tags_curr_map = new Map()
   for (let i = 0; i < tags_curr.length; ++i) tags_curr_map.set(tags_curr[i], i)
@@ -176,6 +192,18 @@ function App() {
     return { states, add }
   }, [bookmark_url, bookmarked, bookmark_tried, set_bookmarked])
 
+  const [resp, missing] = useMemo(() => {
+    if (!result) return [[], 0]
+    if (!(frozen && snapshot?.key === result.key)) return [result.items, 0]
+    const by_pid = new Map(result.items.map((o) => [o.pid, o]))
+    const kept = []
+    for (const pid of snapshot.pids) {
+      const o = by_pid.get(pid)
+      if (o) kept.push(o)
+    }
+    return [kept, snapshot.pids.length - kept.length]
+  }, [result, frozen, snapshot])
+
   const images = useMemo(() => {
     const imgs = resp
     if (safe)
@@ -194,8 +222,17 @@ function App() {
   const stats = useMemo(() => {
     const pages = images.reduce((acc, o) => acc + o.pages.length, 0)
     const users = new Set(images.map((o) => o.aid)).size
-    return `${pages} pages from ${images.length} illusts by ${users} users`
-  }, [images])
+    return (
+      <>
+        {`${pages} pages from ${images.length} illusts by ${users} users`}
+        {missing > 0 && (
+          <Box component="span" sx={{ color: 'error.main' }}>
+            {`, ${missing} missing`}
+          </Box>
+        )}
+      </>
+    )
+  }, [images, missing])
 
   const gallery_switches = [
     { label: 'Sort by Date', checked: resorted, setChecked: set_resorted },
@@ -204,6 +241,17 @@ function App() {
     { label: 'Expanded', checked: expanded, setChecked: set_expanded },
     { label: 'Show Titles', checked: show_title, setChecked: set_show_title },
     { label: 'Go to Link', checked: goto_link, setChecked: set_goto_link },
+    {
+      label: 'Freeze Order',
+      checked: frozen,
+      setChecked: (on) => {
+        if (on) set_frozen(true)
+        else if (confirm_discard()) {
+          set_snapshot(null)
+          set_frozen(false)
+        }
+      },
+    },
   ]
 
   function update() {
@@ -214,6 +262,7 @@ function App() {
       if (tags_banned.includes(tag)) ban_filters.push(tag)
       else filters.push(tag)
     }
+    const key = JSON.stringify([filters, ban_filters])
     console.debug('update', filters, ban_filters)
     fetch(host + 'select', {
       crossDomain: true,
@@ -283,7 +332,7 @@ function App() {
           })
           set_loaded(true)
           set_error(null)
-          set_resp(resp)
+          set_result({ key, items: resp })
           // A heart can only be shown for an illust the backend still returns.
           const alive = new Set(resp.map((o) => o.pid))
           set_bookmarked((a) => {
@@ -294,12 +343,13 @@ function App() {
         (error) => {
           set_loaded(true)
           set_error(error)
-          set_resp([])
+          set_result(null)
         },
       )
   }
 
   const set_tags = (tags) => {
+    if (!confirm_discard()) return
     const s = new Set()
     const tags_curr = tags.filter((tag) => {
       if (s.has(tag)) return false
@@ -313,6 +363,7 @@ function App() {
   }
 
   const toggle_tag = (tag, id, pos) => {
+    if (!confirm_discard()) return
     console.debug('toggle_tag', tag, id, pos, tags_curr, tags_banned)
     if (pos === undefined) set_tags_curr(tags_curr.concat([tag]))
     else {
@@ -433,6 +484,7 @@ function App() {
                           color={banned ? 'error' : 'primary'}
                           label={option}
                           onClick={() => {
+                            if (!confirm_discard()) return
                             const p = tags_banned.indexOf(option)
                             const a = tags_banned.slice(0)
                             if (p >= 0) {
