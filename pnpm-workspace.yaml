@@ -2,3 +2,7 @@ patchedDependencies:
   react-view-pager@0.6.0: patches/react-view-pager@0.6.0.patch
 
 minimumReleaseAge: 21600
+
+overrides:
+  # react-images pulls it in through glam, fbjs and isomorphic-fetch; GHSA-r683-j2x4-v87g
+  node-fetch@<2.6.7: ^2.6.7
