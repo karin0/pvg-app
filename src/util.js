@@ -28,4 +28,12 @@ function useSharedStorage(key, def, map_initial_value) {
 
 const useStorage = (key, def) => useSharedStorage(`${key}:${host}`, def)
 
-export { useSharedStorage, useStorage }
+// A drag that selects text inside a clickable element still ends in a click on
+// it. A click that leaves a selection behind was a selection, so it is dropped.
+function unless_selecting(f) {
+  return (e) => {
+    if (window.getSelection().isCollapsed) f(e)
+  }
+}
+
+export { unless_selecting, useSharedStorage, useStorage }

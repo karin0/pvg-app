@@ -36,7 +36,7 @@ import {
 } from './gallery'
 import ListboxComponent from './Listbox'
 import { getTheme } from './theme'
-import { useSharedStorage, useStorage } from './util'
+import { unless_selecting, useSharedStorage, useStorage } from './util'
 
 function compare(a, b) {
   if (a < b) return -1
@@ -469,6 +469,17 @@ function App() {
                   renderValue={(value, getItemProps) =>
                     value.map((option, index) => {
                       const banned = tags_banned.includes(option)
+                      const toggle_ban = unless_selecting(() => {
+                        if (!confirm_discard()) return
+                        const p = tags_banned.indexOf(option)
+                        const a = tags_banned.slice(0)
+                        if (p >= 0) {
+                          a.splice(p, 1)
+                        } else {
+                          a.push(option)
+                        }
+                        set_tags_banned(a)
+                      })
                       return (
                         // biome-ignore lint/correctness/useJsxKeyInIterable: getItemProps supplies the key via spread
                         <Chip
@@ -485,16 +496,13 @@ function App() {
                           variant={banned ? 'filled' : 'outlined'}
                           color={banned ? 'error' : 'primary'}
                           label={option}
-                          onClick={() => {
-                            if (!confirm_discard()) return
-                            const p = tags_banned.indexOf(option)
-                            const a = tags_banned.slice(0)
-                            if (p >= 0) {
-                              a.splice(p, 1)
-                            } else {
-                              a.push(option)
-                            }
-                            set_tags_banned(a)
+                          // Autocomplete's root cancels every mousedown outside
+                          // its input, which blocks a text selection, and its
+                          // click focuses the input, which drops one.
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggle_ban(e)
                           }}
                           {...getItemProps({ index })}
                         />

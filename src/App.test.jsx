@@ -13,7 +13,7 @@ let backend
 
 function item(pid) {
   // Square pages make the masonry place item i in column i % cols.
-  return [pid, `t${pid}`, 1, 'a', [], [[1, 1, 'img', `${pid}.jpg`]], '', 1]
+  return [pid, `t${pid}`, 1, 'a', ['tag'], [[1, 1, 'img', `${pid}.jpg`]], '', 1]
 }
 
 beforeEach(() => {
@@ -195,5 +195,51 @@ describe('Viewer', () => {
 
     fireEvent.click(screen.getByText('t1'))
     await waitFor(() => expect(viewer()).not.toBeNull())
+  })
+
+  it('lets the text of a filter chip be selected', async () => {
+    backend.env = { filter_defaults: ['$above:1'] }
+    await load()
+    const chip = screen.getByText('$above:1')
+
+    // fireEvent returns false when a handler cancelled the default action.
+    expect(fireEvent.mouseDown(chip)).toBe(true)
+    window.getSelection().selectAllChildren(chip)
+    fireEvent.click(chip)
+    await settle()
+    expect(window.getSelection().toString()).toBe('$above:1')
+    expect(backend.selects.length).toBe(1)
+  })
+
+  it('keeps the viewer closed when title text was selected', async () => {
+    localStorage.setItem(`show_title:${host}`, 'true')
+    backend.pids = [1]
+    await load()
+
+    const title = screen.getByText('t1')
+    window.getSelection().selectAllChildren(title)
+    fireEvent.click(title)
+    await settle()
+    expect(viewer()).toBeNull()
+  })
+
+  it('keeps a chip whose text was selected from filtering', async () => {
+    backend.env = {}
+    backend.pids = [1]
+    await load()
+    fireEvent.click(screen.getByAltText('t1'))
+    await waitFor(() => expect(viewer()).not.toBeNull())
+
+    const chip = screen.getByText('tag')
+    window.getSelection().selectAllChildren(chip)
+    fireEvent.click(chip)
+    await settle()
+    expect(viewer()).not.toBeNull()
+    expect(backend.selects.length).toBe(1)
+
+    window.getSelection().removeAllRanges()
+    fireEvent.click(chip)
+    await waitFor(() => expect(backend.selects.length).toBe(2))
+    expect(backend.selects[1].filters).toEqual(['tag'])
   })
 })
