@@ -182,3 +182,18 @@ describe('Refresh', () => {
     await waitFor(() => expect(gallery_order()).toEqual([1, 2]))
   })
 })
+
+describe('Viewer', () => {
+  const viewer = () => document.querySelector('.react-images__view-image')
+
+  it('opens from the title bar under Go to Link', async () => {
+    localStorage.setItem(`show_title:${host}`, 'true')
+    localStorage.setItem(`goto_link:${host}`, 'true')
+    backend.pids = [1]
+    await load()
+    expect(screen.getByAltText('t1').closest('a')).not.toBeNull()
+
+    fireEvent.click(screen.getByText('t1'))
+    await waitFor(() => expect(viewer()).not.toBeNull())
+  })
+})
