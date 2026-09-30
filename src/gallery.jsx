@@ -138,7 +138,10 @@ function BookmarkButton(props) {
       size="small"
       title={status?.message}
       disabled={state === 'pending'}
-      onClick={() => bookmarks.add(pid)}
+      onClick={(e) => {
+        e.stopPropagation()
+        bookmarks.add(pid)
+      }}
       sx={{
         p: '4px',
         color: HEART_COLOR[state] ?? 'rgba(255, 255, 255, 0.85)',
@@ -385,17 +388,15 @@ const GalleryView = React.memo(function GalleryView(props) {
             // fewer pages than exist. Paging behavior follows the pages
             // actually served.
             const pc = img.meta?.pc ?? img.pc
+            const open =
+              pages && pages.length > 1
+                ? () => show_images(img.pages, 0)
+                : () => show_images(images, i)
             const image = (
               <img
                 src={host + img.ori}
                 loading="lazy"
-                onClick={
-                  goto_link
-                    ? undefined
-                    : pages && pages.length > 1
-                      ? () => show_images(img.pages, 0)
-                      : () => show_images(images, i)
-                }
+                onClick={goto_link ? undefined : open}
                 alt={img.title}
                 width={img.w}
                 height={img.h}
@@ -452,10 +453,13 @@ const GalleryView = React.memo(function GalleryView(props) {
                   image
                 )}
                 {(show_title || icons) && (
+                  // The bar opens the viewer even under Go to Link, leaving the
+                  // image above it as the way out to the link.
                   <ImageListItemBar
                     title={show_title ? img.title : undefined}
                     subtitle={show_title ? img.author : undefined}
                     actionIcon={icons || undefined}
+                    onClick={open}
                   />
                 )}
               </Box>
