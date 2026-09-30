@@ -29,6 +29,7 @@ import { EnvContext } from './AppDrawer'
 import { host, images_per_page } from './env'
 import ProgressRail from './ProgressRail'
 import UpscalingDialog from './UpscalingDialog'
+import { unless_selecting } from './util'
 
 const TagUpdaterContext = React.createContext()
 const FilterTagsContext = React.createContext()
@@ -163,6 +164,13 @@ function chip_label(text, note) {
   )
 }
 
+// A clickable Chip turns text selection off, and its label is worth copying.
+const CAPTION_CHIP_STYLE = {
+  marginRight: '0.5em',
+  marginBottom: '0.3em',
+  userSelect: 'text',
+}
+
 function CaptionLink(props) {
   return (
     <Typography>
@@ -210,13 +218,13 @@ function ImageCaption(props) {
       <Chip
         key={tag}
         size={small ? 'small' : undefined}
-        style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
+        style={CAPTION_CHIP_STYLE}
         color={pos === undefined ? 'info' : 'primary'}
         label={chip_label(tag, notes?.[tag])}
-        onClick={() => {
+        onClick={unless_selecting(() => {
           props.close_modal()
           update_tags(tag, img.iid, pos)
-        }}
+        })}
       />
     )
   }
@@ -261,13 +269,13 @@ function ImageCaption(props) {
           </div>
           <div style={{ marginTop: '4px', marginBottom: '-8px' }}>
             <Chip
-              style={{ marginRight: '0.5em', marginBottom: '0.3em' }}
+              style={CAPTION_CHIP_STYLE}
               color={apos === undefined ? 'secondary' : 'primary'}
               label={chip_label(img.author, notes?.[img.author])}
-              onClick={() => {
+              onClick={unless_selecting(() => {
                 props.close_modal()
                 update_tags(img.author, img.iid, apos)
-              }}
+              })}
             />
             {plain.map((tag) => tag_chip(tag, false))}
           </div>
@@ -459,7 +467,7 @@ const GalleryView = React.memo(function GalleryView(props) {
                     title={show_title ? img.title : undefined}
                     subtitle={show_title ? img.author : undefined}
                     actionIcon={icons || undefined}
-                    onClick={open}
+                    onClick={unless_selecting(open)}
                   />
                 )}
               </Box>
