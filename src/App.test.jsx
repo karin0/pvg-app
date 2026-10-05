@@ -10,9 +10,9 @@ vi.hoisted(() => vi.stubEnv('VITE_SCORE_URLS', 'image=http://scores/image'))
 // useStorage suffixes each key with the API host.
 const SNAPSHOT = `snapshot:${host}`
 
-// The backend is the network boundary: `/env`, `/select` and the score source
-// answer from this state, and every `/select` and score request body is
-// recorded.
+// The backend is the network boundary: `/env`, `/select`, the score source and
+// its details answer from this state, and every `/select` and score request
+// body is recorded.
 let backend
 
 function item(pid) {
@@ -27,9 +27,14 @@ beforeEach(() => {
     selects: [],
     scores: {},
     score_asks: [],
+    details: {},
   }
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
     if (url.endsWith('env')) return Response.json(backend.env)
+    if (url.startsWith('http://scores/image/')) {
+      const body = backend.details[url.slice(url.lastIndexOf('/') + 1)]
+      return body ? Response.json(body) : new Response(null, { status: 404 })
+    }
     if (url === 'http://scores/image') {
       backend.score_asks.push(JSON.parse(init.body))
       return Response.json(backend.scores)
@@ -307,5 +312,31 @@ describe('Scores', () => {
     await waitFor(() => expect(gallery_order()).toEqual([1, 3, 2]))
     expect(screen.getByLabelText('Sort by Date').disabled).toBe(true)
     expect(screen.getByLabelText('Sort by Score').disabled).toBe(false)
+  })
+
+  it("merges the score source's detail into the viewed illust", async () => {
+    pick()
+    // Freeze Order off, so a filter change needs no confirmation.
+    backend.env = {}
+    backend.pids = [1, 2]
+    backend.scores = { 1: 0.5 }
+    backend.details = {
+      1: {
+        tags: ['tag', 'sky'],
+        meta: { score: 3, tag_notes: { sky: '0.62 (+0.10)', a: '(+1.00)' } },
+      },
+    }
+    await load()
+    fireEvent.click(screen.getByAltText('t1'))
+    await waitFor(() => expect(screen.getByText('0.62 (+0.10)')).not.toBeNull())
+    expect(screen.getByText('sky')).not.toBeNull()
+    expect(screen.getByText('(+1.00)')).not.toBeNull()
+    expect(screen.getAllByText('tag').length).toBe(1)
+    expect(screen.getByText('+3.00')).not.toBeNull()
+
+    fireEvent.click(screen.getByText('sky'))
+    fireEvent.click(screen.getByText('tag'))
+    await waitFor(() => expect(backend.selects.length).toBe(2))
+    expect(backend.selects[1].filters).toEqual(['tag'])
   })
 })
