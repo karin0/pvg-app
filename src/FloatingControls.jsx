@@ -13,7 +13,7 @@ import {
 } from '@mui/material'
 import { useRef, useState } from 'react'
 
-import { host, hosts, origin_host } from './env'
+import { host, hosts, origin_host, score_sources } from './env'
 
 function EndpointSelect(props) {
   if (!hosts.length) return null
@@ -48,9 +48,33 @@ function EndpointSelect(props) {
   )
 }
 
+function ScoreSelect(props) {
+  if (!score_sources.length) return null
+  return (
+    <Select
+      value={props.value ?? ''}
+      displayEmpty
+      onChange={(e) => props.onChange(e.target.value || null)}
+      onOpen={() => props.onMenuToggle(true)}
+      onClose={() => props.onMenuToggle(false)}
+      MenuProps={{ disableScrollLock: true }}
+      size="small"
+      fullWidth
+      sx={{ mt: 1 }}
+    >
+      <MenuItem value="">No Scores</MenuItem>
+      {score_sources.map((s) => (
+        <MenuItem key={s.name} value={s.name}>
+          {s.name}
+        </MenuItem>
+      ))}
+    </Select>
+  )
+}
+
 // menu_open keeps the panel up while the portaled Select menu is open.
 function FloatingControls(props) {
-  const { switches, caption } = props
+  const { switches, caption, score_source, set_score_source } = props
   const [open, set_open] = useState(false)
   const [menu_open, set_menu_open] = useState(false)
   const root_ref = useRef(null)
@@ -103,6 +127,7 @@ function FloatingControls(props) {
               {switches.map((s) => (
                 <FormControlLabel
                   key={s.label}
+                  disabled={s.disabled}
                   labelPlacement="start"
                   sx={{
                     ml: 0,
@@ -121,6 +146,11 @@ function FloatingControls(props) {
                 />
               ))}
             </Box>
+            <ScoreSelect
+              value={score_source}
+              onChange={set_score_source}
+              onMenuToggle={on_menu_toggle}
+            />
             <EndpointSelect onMenuToggle={on_menu_toggle} />
           </Paper>
         </Collapse>

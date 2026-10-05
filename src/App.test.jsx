@@ -4,11 +4,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { host } from './env'
 
+// env.js reads the build variables when App imports it.
+vi.hoisted(() => vi.stubEnv('VITE_SCORE_URLS', 'image=http://scores/image'))
+
 // useStorage suffixes each key with the API host.
 const SNAPSHOT = `snapshot:${host}`
 
-// The backend is the network boundary: `/env` and `/select` answer from this
-// state, and every `/select` body is recorded.
+// The backend is the network boundary: `/env`, `/select` and the score source
+// answer from this state, and every `/select` and score request body is
+// recorded.
 let backend
 
 function item(pid) {
@@ -17,9 +21,19 @@ function item(pid) {
 }
 
 beforeEach(() => {
-  backend = { env: { switch_defaults: ['frozen'] }, pids: [], selects: [] }
+  backend = {
+    env: { switch_defaults: ['frozen'] },
+    pids: [],
+    selects: [],
+    scores: {},
+    score_asks: [],
+  }
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
     if (url.endsWith('env')) return Response.json(backend.env)
+    if (url === 'http://scores/image') {
+      backend.score_asks.push(JSON.parse(init.body))
+      return Response.json(backend.scores)
+    }
     backend.selects.push(JSON.parse(init.body))
     return Response.json({ items: backend.pids.map(item) })
   })
@@ -241,5 +255,57 @@ describe('Viewer', () => {
     fireEvent.click(chip)
     await waitFor(() => expect(backend.selects.length).toBe(2))
     expect(backend.selects[1].filters).toEqual(['tag'])
+  })
+})
+
+describe('Scores', () => {
+  const pick = () => localStorage.setItem(`score_source:${host}`, '"image"')
+  const toggle = (label) => {
+    fireEvent.click(screen.getByLabelText('controls'))
+    return screen.queryByLabelText(label)
+  }
+
+  it("shows the picked source's scores in the backend order", async () => {
+    pick()
+    backend.pids = [1, 2, 3]
+    backend.scores = { 1: 0.5, 3: 2 }
+    await load()
+    await waitFor(() => expect(screen.getByText('+2.00')).not.toBeNull())
+    expect(screen.getByText('+0.50')).not.toBeNull()
+    expect(backend.score_asks).toEqual([[1, 2, 3]])
+    expect(gallery_order()).toEqual([1, 2, 3])
+  })
+
+  it('sorts by score with unscored illusts at the tail', async () => {
+    pick()
+    localStorage.setItem(`score_sorted:${host}`, 'true')
+    backend.pids = [1, 2, 3, 4]
+    backend.scores = { 2: -1, 3: 2 }
+    await load()
+    await waitFor(() => expect(gallery_order()).toEqual([3, 2, 1, 4]))
+  })
+
+  it('hides Sort by Score until a source is picked', async () => {
+    await load()
+    expect(toggle('Sort by Score')).toBeNull()
+    expect(backend.score_asks).toEqual([])
+  })
+
+  it('lets Sort by Date win and disables the other sort', async () => {
+    pick()
+    localStorage.setItem(`score_sorted:${host}`, 'true')
+    localStorage.setItem(`resorted:${host}`, 'true')
+    backend.pids = [1, 2, 3]
+    backend.scores = { 1: 2, 3: -1 }
+    await load()
+    await waitFor(() => expect(backend.score_asks.length).toBe(1))
+    await settle()
+    expect(gallery_order()).toEqual([3, 2, 1])
+    expect(toggle('Sort by Score').disabled).toBe(true)
+
+    fireEvent.click(screen.getByLabelText('Sort by Date'))
+    await waitFor(() => expect(gallery_order()).toEqual([1, 3, 2]))
+    expect(screen.getByLabelText('Sort by Date').disabled).toBe(true)
+    expect(screen.getByLabelText('Sort by Score').disabled).toBe(false)
   })
 })

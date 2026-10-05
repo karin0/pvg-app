@@ -25,7 +25,7 @@ import Autocomplete from '@mui/material/Autocomplete'
 import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles'
 
 import AppDrawer from './AppDrawer'
-import { host } from './env'
+import { host, score_sources } from './env'
 import FloatingControls from './FloatingControls'
 import {
   BookmarkContext,
@@ -126,6 +126,13 @@ function App() {
   const [show_title, set_show_title] = useSwitch('show_title')
   const [goto_link, set_goto_link] = useSwitch('goto_link')
   const [frozen, set_frozen] = useSwitch('frozen')
+  const [score_sorted, set_score_sorted] = useSwitch('score_sorted')
+
+  // The picked score source replaces the backend's own scores. Sort by Score
+  // and Sort by Date exclude each other; with both stored on, the date wins.
+  const [score_name, set_score_name] = useStorage('score_source', null)
+  const score_url = score_sources.find((s) => s.name === score_name)?.url
+  const by_score = Boolean(score_url) && score_sorted && !resorted
 
   // Freeze Order pins the membership and order of the first non-empty result
   // for the current filters, so a round read across reloads keeps its
@@ -205,8 +212,43 @@ function App() {
     return [kept, snapshot.pids.length - kept.length]
   }, [result, frozen, snapshot])
 
+  // The picked source's latest scores, tagged with its url. Scores belong to
+  // illusts rather than to a result, so they stay on screen while the next
+  // result's scores load.
+  const [scores, set_scores] = useState(null)
+  useEffect(() => {
+    if (!(score_url && result)) return
+    let live = true
+    fetch(score_url, {
+      method: 'POST',
+      body: JSON.stringify(result.items.map((o) => o.pid)),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+      signal: AbortSignal.timeout(30000),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
+      .then(
+        (map) => live && set_scores({ url: score_url, map }),
+        (error) => console.error('scores', score_url, error.message),
+      )
+    return () => {
+      live = false
+    }
+  }, [score_url, result])
+
+  const scored = useMemo(() => {
+    if (!score_url) return resp
+    const map = scores?.url === score_url ? scores.map : {}
+    return resp.map((o) => {
+      const meta = { ...o.meta, score: map[o.pid] }
+      return { ...o, meta, pages: o.pages.map((p) => ({ ...p, meta })) }
+    })
+  }, [resp, scores, score_url])
+
   const images = useMemo(() => {
-    const imgs = resp
+    const imgs = scored
     if (safe)
       return imgs.filter((img) => {
         if (img.san !== 1) return false
@@ -214,7 +256,7 @@ function App() {
         return true
       })
     return imgs.slice(0)
-  }, [resp, safe])
+  }, [scored, safe])
 
   const tags = useMemo(() => {
     return get_tag_list(images)
@@ -236,7 +278,22 @@ function App() {
   }, [images, missing])
 
   const gallery_switches = [
-    { label: 'Sort by Date', checked: resorted, setChecked: set_resorted },
+    {
+      label: 'Sort by Date',
+      checked: resorted,
+      setChecked: set_resorted,
+      disabled: by_score,
+    },
+    ...(score_url
+      ? [
+          {
+            label: 'Sort by Score',
+            checked: score_sorted,
+            setChecked: set_score_sorted,
+            disabled: resorted,
+          },
+        ]
+      : []),
     { label: 'Reversed', checked: reversed, setChecked: set_reversed },
     { label: 'Group by User', checked: grouped, setChecked: set_grouped },
     { label: 'Expanded', checked: expanded, setChecked: set_expanded },
@@ -553,6 +610,7 @@ function App() {
                       images={images}
                       locating_id={locating_id}
                       resorted={resorted}
+                      by_score={by_score}
                       reversed={reversed}
                       grouped={grouped}
                       expanded={expanded}
@@ -569,6 +627,8 @@ function App() {
         </EnvContext.Provider>
         <FloatingControls
           switches={gallery_switches}
+          score_source={score_url ? score_name : null}
+          set_score_source={set_score_name}
           caption={loaded && env ? stats : null}
         />
         <Snackbar

@@ -695,6 +695,7 @@ function group_by_author(illusts) {
 function PvgGallery(props) {
   const {
     resorted,
+    by_score,
     reversed,
     grouped,
     expanded,
@@ -706,9 +707,12 @@ function PvgGallery(props) {
   const illusts = props.images
   const images = useMemo(() => {
     let imgs = illusts
-    if (resorted || reversed) {
+    if (resorted || by_score || reversed) {
       imgs = imgs.slice(0)
       if (resorted) imgs.sort((a, b) => b.pid - a.pid)
+      // Unscored illusts keep their order at the tail.
+      const score = (o) => o.meta?.score ?? Number.NEGATIVE_INFINITY
+      if (by_score) imgs.sort((a, b) => score(b) - score(a) || 0)
       if (reversed) imgs.reverse()
     }
     if (grouped) imgs = group_by_author(imgs)
@@ -717,7 +721,7 @@ function PvgGallery(props) {
       ...o.pages[0],
       pages: o.pages,
     }))
-  }, [illusts, resorted, reversed, grouped, expanded])
+  }, [illusts, resorted, by_score, reversed, grouped, expanded])
 
   // The page array identity must survive re-renders: GalleryPagination hands
   // each chunk straight to a memoized GalleryView.
