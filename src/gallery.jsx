@@ -36,6 +36,8 @@ const FilterTagsContext = React.createContext()
 // `{states: Map(pid -> {state: 'pending' | 'done' | 'error', message}),
 // add(pid)}`, or null when `/env` names no bookmark endpoint.
 const BookmarkContext = React.createContext(null)
+// The picked score source's url, or null.
+const ScoreSourceContext = React.createContext(null)
 
 function illust_url(img, env) {
   return (
@@ -180,10 +182,49 @@ function CaptionLink(props) {
     </Typography>
   )
 }
+// The illust with the picked score source's detail of it merged in: its tags
+// appended, its meta keys over the item's. Also the appended tags, which
+// name the source's own concepts and so mean nothing as filters.
+const NO_TAGS = new Set()
+function useDetail(img) {
+  const score_url = useContext(ScoreSourceContext)
+  const url = score_url && `${score_url}/${img.pid}`
+  const [detail, set_detail] = useState(null)
+  useEffect(() => {
+    if (!url) return
+    let live = true
+    fetch(url, { signal: AbortSignal.timeout(30000) })
+      .then((res) => {
+        // The source has no detail for this illust.
+        if (res.status === 404) return null
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
+      .then(
+        (body) => live && body && set_detail({ url, ...body }),
+        (error) => console.error('detail', url, error.message),
+      )
+    return () => {
+      live = false
+    }
+  }, [url])
+  return useMemo(() => {
+    if (detail?.url !== url) return [img, NO_TAGS]
+    const own = new Set(img.tags)
+    const added = detail.tags.filter((t) => !own.has(t))
+    const merged = {
+      ...img,
+      tags: img.tags.concat(added),
+      meta: { ...img.meta, ...detail.meta },
+    }
+    return [merged, new Set(added)]
+  }, [img, url, detail])
+}
+
 function ImageCaption(props) {
   const [show, set_show] = useState(true)
 
-  const img = props.img
+  const [img, sourced] = useDetail(props.img)
 
   useEffect(() => {
     const a = document.querySelectorAll('img.react-images__view-image')
@@ -221,10 +262,14 @@ function ImageCaption(props) {
         style={CAPTION_CHIP_STYLE}
         color={pos === undefined ? 'info' : 'primary'}
         label={chip_label(tag, notes?.[tag])}
-        onClick={unless_selecting(() => {
-          props.close_modal()
-          update_tags(tag, img.iid, pos)
-        })}
+        onClick={
+          sourced.has(tag)
+            ? undefined
+            : unless_selecting(() => {
+                props.close_modal()
+                update_tags(tag, img.iid, pos)
+              })
+        }
       />
     )
   }
@@ -777,5 +822,6 @@ export {
   EnvContext,
   FilterTagsContext,
   PvgGallery,
+  ScoreSourceContext,
   TagUpdaterContext,
 }

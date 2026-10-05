@@ -32,6 +32,7 @@ import {
   EnvContext,
   FilterTagsContext,
   PvgGallery,
+  ScoreSourceContext,
   TagUpdaterContext,
 } from './gallery'
 import ListboxComponent from './Listbox'
@@ -606,17 +607,19 @@ function App() {
               <BookmarkContext.Provider value={bookmark_ctx}>
                 <TagUpdaterContext.Provider value={toggle_tag}>
                   <FilterTagsContext.Provider value={tags_curr_map}>
-                    <PvgGallery
-                      images={images}
-                      locating_id={locating_id}
-                      resorted={resorted}
-                      by_score={by_score}
-                      reversed={reversed}
-                      grouped={grouped}
-                      expanded={expanded}
-                      show_title={show_title}
-                      goto_link={goto_link}
-                    />
+                    <ScoreSourceContext.Provider value={score_url ?? null}>
+                      <PvgGallery
+                        images={images}
+                        locating_id={locating_id}
+                        resorted={resorted}
+                        by_score={by_score}
+                        reversed={reversed}
+                        grouped={grouped}
+                        expanded={expanded}
+                        show_title={show_title}
+                        goto_link={goto_link}
+                      />
+                    </ScoreSourceContext.Provider>
                   </FilterTagsContext.Provider>
                 </TagUpdaterContext.Provider>
               </BookmarkContext.Provider>
