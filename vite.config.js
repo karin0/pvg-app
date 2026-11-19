@@ -6,7 +6,7 @@ const gitDescribe = execSync('git describe --tags --always --dirty', {
   encoding: 'utf8',
 }).trim()
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     {
@@ -15,6 +15,8 @@ export default defineConfig({
     },
   ],
   base: '/s/',
+  // The tests build their variables themselves, apart from the checkout's .env.
+  envDir: mode === 'test' ? false : undefined,
   define: {
     __GIT_DESCRIBE__: JSON.stringify(gitDescribe),
   },
@@ -28,4 +30,4 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['src/test-setup.js'],
   },
-})
+}))
