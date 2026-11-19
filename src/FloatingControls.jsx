@@ -13,25 +13,20 @@ import {
 } from '@mui/material'
 import { useRef, useState } from 'react'
 
-import { host, hosts, origin_host, score_sources } from './env'
+import { backend, backends, score_sources } from './env'
 
 function EndpointSelect(props) {
-  if (!hosts.length) return null
+  if (backends.length < 2) return null
 
-  const options = []
-  for (const h of [origin_host, ...hosts, host]) {
-    if (!options.includes(h)) options.push(h)
-  }
-
-  const switch_host = (e) => {
-    localStorage.setItem('dev_host', e.target.value)
+  const switch_backend = (e) => {
+    localStorage.setItem('backend', e.target.value)
     window.location.reload()
   }
 
   return (
     <Select
-      value={host}
-      onChange={switch_host}
+      value={backend.name}
+      onChange={switch_backend}
       onOpen={() => props.onMenuToggle(true)}
       onClose={() => props.onMenuToggle(false)}
       MenuProps={{ disableScrollLock: true }}
@@ -39,9 +34,9 @@ function EndpointSelect(props) {
       fullWidth
       sx={{ mt: 1 }}
     >
-      {options.map((h) => (
-        <MenuItem key={h} value={h}>
-          {h}
+      {backends.map((b) => (
+        <MenuItem key={b.name} value={b.name}>
+          {b.name}
         </MenuItem>
       ))}
     </Select>

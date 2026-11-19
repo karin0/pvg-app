@@ -2,13 +2,13 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
-import { host } from './env'
+import * as env from './env'
 
 // env.js reads the build variables when App imports it.
 vi.hoisted(() => vi.stubEnv('VITE_SCORE_URLS', 'image=http://scores/image'))
 
-// useStorage suffixes each key with the API host.
-const SNAPSHOT = `snapshot:${host}`
+// useStorage suffixes each key with the backend's name.
+const SNAPSHOT = `snapshot:${env.backend.name}`
 
 // The backend is the network boundary: `/env`, `/select`, the score source and
 // its details answer from this state, and every `/select` and score request
@@ -206,8 +206,8 @@ describe('Viewer', () => {
   const viewer = () => document.querySelector('.react-images__view-image')
 
   it('opens from the title bar under Go to Link', async () => {
-    localStorage.setItem(`show_title:${host}`, 'true')
-    localStorage.setItem(`goto_link:${host}`, 'true')
+    localStorage.setItem(`show_title:${env.backend.name}`, 'true')
+    localStorage.setItem(`goto_link:${env.backend.name}`, 'true')
     backend.pids = [1]
     await load()
     expect(screen.getByAltText('t1').closest('a')).not.toBeNull()
@@ -231,7 +231,7 @@ describe('Viewer', () => {
   })
 
   it('keeps the viewer closed when title text was selected', async () => {
-    localStorage.setItem(`show_title:${host}`, 'true')
+    localStorage.setItem(`show_title:${env.backend.name}`, 'true')
     backend.pids = [1]
     await load()
 
@@ -264,7 +264,8 @@ describe('Viewer', () => {
 })
 
 describe('Scores', () => {
-  const pick = () => localStorage.setItem(`score_source:${host}`, '"image"')
+  const pick = () =>
+    localStorage.setItem(`score_source:${env.backend.name}`, '"image"')
   const toggle = (label) => {
     fireEvent.click(screen.getByLabelText('controls'))
     return screen.queryByLabelText(label)
@@ -283,7 +284,7 @@ describe('Scores', () => {
 
   it('sorts by score with unscored illusts at the tail', async () => {
     pick()
-    localStorage.setItem(`score_sorted:${host}`, 'true')
+    localStorage.setItem(`score_sorted:${env.backend.name}`, 'true')
     backend.pids = [1, 2, 3, 4]
     backend.scores = { 2: -1, 3: 2 }
     await load()
@@ -298,8 +299,8 @@ describe('Scores', () => {
 
   it('lets Sort by Date win and disables the other sort', async () => {
     pick()
-    localStorage.setItem(`score_sorted:${host}`, 'true')
-    localStorage.setItem(`resorted:${host}`, 'true')
+    localStorage.setItem(`score_sorted:${env.backend.name}`, 'true')
+    localStorage.setItem(`resorted:${env.backend.name}`, 'true')
     backend.pids = [1, 2, 3]
     backend.scores = { 1: 2, 3: -1 }
     await load()

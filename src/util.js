@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 
-import { host } from './env'
+import { backend } from './env'
 
 function useSharedStorage(key, def, map_initial_value) {
   const [v, set_v] = useState(() => {
@@ -26,7 +26,7 @@ function useSharedStorage(key, def, map_initial_value) {
   return [v, set]
 }
 
-const useStorage = (key, def) => useSharedStorage(`${key}:${host}`, def)
+const useStorage = (key, def) => useSharedStorage(`${key}:${backend.name}`, def)
 
 // A drag that selects text inside a clickable element still ends in a click on
 // it. A click that leaves a selection behind was a selection, so it is dropped.
